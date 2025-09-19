@@ -9,7 +9,7 @@
 const MESSAGE = require('../../modulo/config.js')
 
 //Import do DAO para realizar um CRUD no banco de dados
-const bancoSangueDAO = require('../../model/DAO/bancoSangue')
+const bancoSangueDAO = require('../../model/DAO/banco_sangue')
 
 //Função para inserir um novo registro de sangue
 const inserirBancoSangue = async function (banco, contentType) {

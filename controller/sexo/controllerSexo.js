@@ -9,7 +9,7 @@
 const MESSAGE = require('../../modulo/config.js')
 
 //Import do DAO para realizar um CRUD no banco de dados
-const sexoDAO = require('../../model/DAO/sexo')
+const sexoDAO = require('../../model/DAO/sexoUsuario')
 
 //Função para inserir um novo registro de sexo
 const inserirSexo = async function (sexo, contentType) {

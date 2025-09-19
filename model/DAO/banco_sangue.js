@@ -39,11 +39,11 @@ const insertBancoSangue = async function(bancoSangue){
 }
 
 //============================== ATUALIZAR ==============================
-const updateBancoSangue = async function(bancoSangue){
+const updateBancoSangue = async function(bancoSangue, id){
     try{
         let sql = `update tbl_banco_sangue set  tipo_sanguineo = '${bancoSangue.tipo_sanguineo}',
                                                 quantidade    = '${bancoSangue.quantidade}'
-                                            where id = ${bancoSangue.id}`
+                                            where id = ${id}`
 
         let result = await prisma.$executeRawUnsafe(sql)
 
