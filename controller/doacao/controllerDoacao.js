@@ -54,10 +54,11 @@ const atualizarDoacao = async function(doacao, id, contentType) {
                 if(resultDoacao.status_code === 200) {
                     let updated = await doacaoDAO.updateDoacao(doacao, parseInt(id))
                     if(updated) {
+                        let doacaoAtualizada = {...doacao, id: parseInt(id)}
                         return {
                             status_code: 200,
                             message: "Doação atualizada com sucesso",
-                            doacao: doacao
+                            doacao: doacaoAtualizada
                         }
                     } else {
                         return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
@@ -132,17 +133,14 @@ const buscarDoacao = async function(id) {
         } else {
             let dadosDoacao = {}
             let resultDoacao = await doacaoDAO.selectByIdDoacao(parseInt(id))
-            if(resultDoacao !== false && typeof(resultDoacao) === 'object') {
-                if(resultDoacao.length > 0) {
-                    dadosDoacao.status = true
-                    dadosDoacao.status_code = 200
-                    dadosDoacao.doacao = resultDoacao[0]
-                    return dadosDoacao
-                } else {
-                    return MESSAGE.ERROR_NOT_FOUND
-                }
+            
+            if(resultDoacao) {
+                dadosDoacao.status = true
+                dadosDoacao.status_code = 200
+                dadosDoacao.doacao = resultDoacao
+                return dadosDoacao
             } else {
-                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+                return MESSAGE.ERROR_NOT_FOUND
             }
         }
     } catch(error) {

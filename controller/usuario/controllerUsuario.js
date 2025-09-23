@@ -1,16 +1,15 @@
 /***************************************************************************************
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD do USUÁRIO.
- * DATA: 18/09/2025
+ * DATA: 22/09/2025
  * AUTOR: Daniel Torres
- * Versão: 1.1
+ * Versão: 1.2
  ***************************************************************************************/
 
 const MESSAGE = require('../../modulo/config.js')
 const usuarioDAO = require('../../model/DAO/usuario.js')
-const controllerBancoSangue = require('../banco_sangue/controllerBancoSangue.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
 
-//Inserir novo usuário
+//============================== INSERIR ==============================
 const inserirUsuario = async function(usuario, contentType){
     try{
         if(contentType !== 'application/json'){
@@ -23,17 +22,13 @@ const inserirUsuario = async function(usuario, contentType){
            !usuario.cpf || usuario.cpf.length > 15 ||
            !usuario.cep || usuario.cep.length > 10 ||
            !usuario.data_nascimento ||
-           !usuario.id_banco_sangue || isNaN(usuario.id_banco_sangue) || usuario.id_banco_sangue <= 0 ||
+           !usuario.tipo_sanguineo || usuario.tipo_sanguineo.length > 3 ||
            !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
-        //Valida se o banco de sangue existe
-        const bancoExistente = await controllerBancoSangue.buscarBancoSangue(usuario.id_banco_sangue)
-        if(!bancoExistente || bancoExistente.status_code !== 200){
-            return { status_code: 404, message: "Banco de sangue não encontrado" }
-        }
+
 
         //Valida se o sexo existe
         const sexoExistente = await controllerSexo.buscarSexo(usuario.id_sexo)
@@ -58,7 +53,7 @@ const inserirUsuario = async function(usuario, contentType){
     }
 }
 
-//Atualizar usuário
+//============================== ATUALIZAR ==============================
 const atualizarUsuario = async function(usuario, id, contentType){
     try{
         if(contentType !== 'application/json'){
@@ -71,7 +66,7 @@ const atualizarUsuario = async function(usuario, id, contentType){
            !usuario.cpf || usuario.cpf.length > 15 ||
            !usuario.cep || usuario.cep.length > 10 ||
            !usuario.data_nascimento ||
-           !usuario.id_banco_sangue || isNaN(usuario.id_banco_sangue) || usuario.id_banco_sangue <= 0 ||
+           !usuario.tipo_sanguineo || usuario.tipo_sanguineo.length > 5 ||
            !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0 ||
            !id || isNaN(id) || id <= 0
         ){
@@ -79,14 +74,8 @@ const atualizarUsuario = async function(usuario, id, contentType){
         }
 
         const usuarioExistente = await usuarioDAO.selectByIdUsuario(parseInt(id))
-        if(!usuarioExistente || usuarioExistente.length === 0){
+        if(!usuarioExistente){
             return MESSAGE.ERROR_NOT_FOUND
-        }
-
-        //Valida chaves estrangeiras
-        const bancoExistente = await controllerBancoSangue.buscarBancoSangue(usuario.id_banco_sangue)
-        if(!bancoExistente || bancoExistente.status_code !== 200){
-            return { status_code: 404, message: "Banco de sangue não encontrado" }
         }
 
         const sexoExistente = await controllerSexo.buscarSexo(usuario.id_sexo)
@@ -94,7 +83,8 @@ const atualizarUsuario = async function(usuario, id, contentType){
             return { status_code: 404, message: "Sexo não encontrado" }
         }
 
-        const result = await usuarioDAO.updateUsuario(usuario, parseInt(id))
+        usuario.id = parseInt(id)
+        const result = await usuarioDAO.updateUsuario(usuario)
         if(result){
             return MESSAGE.SUCCESS_UPDATE_ITEM
         } else {
@@ -107,7 +97,7 @@ const atualizarUsuario = async function(usuario, id, contentType){
     }
 }
 
-//Excluir usuário
+//============================== EXCLUIR ==============================
 const excluirUsuario = async function(id){
     try{
         if(!id || isNaN(id) || id <= 0){
@@ -115,7 +105,7 @@ const excluirUsuario = async function(id){
         }
 
         const usuarioExistente = await usuarioDAO.selectByIdUsuario(parseInt(id))
-        if(!usuarioExistente || usuarioExistente.length === 0){
+        if(!usuarioExistente){
             return MESSAGE.ERROR_NOT_FOUND
         }
 
@@ -132,27 +122,21 @@ const excluirUsuario = async function(id){
     }
 }
 
-//Listar usuários
+//============================== LISTAR ==============================
 const listarUsuario = async function(){
     try{
         let resultUsuario = await usuarioDAO.selectAllUsuario()
-        if(!resultUsuario || typeof(resultUsuario) !== 'object' || resultUsuario.length === 0){
+        if(!resultUsuario){
             return MESSAGE.ERROR_NOT_FOUND
         }
 
-        const arrayUsuarios = []
-        for(const item of resultUsuario){
-            const banco = await controllerBancoSangue.buscarBancoSangue(item.id_banco_sangue)
-            item.banco_sangue = banco?.banco_sangue || null
-
-            const sexo = await controllerSexo.buscarSexo(item.id_sexo)
-            item.sexo = sexo?.sexo || null
-
-            delete item.id_banco_sangue
-            delete item.id_sexo
-
-            arrayUsuarios.push(item)
-        }
+        const arrayUsuarios = resultUsuario.map(item => {
+            return {
+                ...item,
+                sexo: item.nome_sexo,
+                nome_sexo: undefined
+            }
+        })
 
         return {
             status: true,
@@ -167,7 +151,7 @@ const listarUsuario = async function(){
     }
 }
 
-//Buscar usuário por ID
+//============================== BUSCAR POR ID ==============================
 const buscarUsuario = async function(id){
     try{
         if(!id || isNaN(id) || id <= 0){
@@ -175,19 +159,15 @@ const buscarUsuario = async function(id){
         }
 
         const resultUsuario = await usuarioDAO.selectByIdUsuario(parseInt(id))
-        if(!resultUsuario || resultUsuario.length === 0){
+        if(!resultUsuario){
             return MESSAGE.ERROR_NOT_FOUND
         }
 
-        const usuario = resultUsuario[0]
-        const banco = await controllerBancoSangue.buscarBancoSangue(usuario.id_banco_sangue)
-        usuario.banco_sangue = banco?.banco_sangue || null
-
-        const sexo = await controllerSexo.buscarSexo(usuario.id_sexo)
-        usuario.sexo = sexo?.sexo || null
-
-        delete usuario.id_banco_sangue
-        delete usuario.id_sexo
+        const usuario = {
+            ...resultUsuario,
+            sexo: resultUsuario.nome_sexo,
+            nome_sexo: undefined
+        }
 
         return {
             status: true,

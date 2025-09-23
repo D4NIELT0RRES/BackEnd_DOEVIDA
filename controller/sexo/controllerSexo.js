@@ -19,7 +19,7 @@ const inserirSexo = async function (sexo, contentType) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS // 400
             } else {
                 //Encaminha os dados para o DAO
-                let resultSexo = await sexoDAO.insertSexo(sexo)
+                let resultSexo = await sexoDAO.insertSexoUsuario(sexo)
 
                 if(resultSexo) {
                     return {
@@ -50,7 +50,7 @@ const atualizarSexo = async function(sexo, id, contentType) {
             } else {
                 let resultSexo = await buscarSexo(parseInt(id))
                 if(resultSexo.status_code === 200) {
-                    let updated = await sexoDAO.updateSexo(sexo, parseInt(id))
+                    let updated = await sexoDAO.updateSexoUsuario(sexo, parseInt(id))
                     if(updated) {
                         return {
                             status_code: 200,
@@ -81,7 +81,7 @@ const excluirSexo = async function(id) {
         } else {
             let resultSexo = await buscarSexo(parseInt(id))
             if(resultSexo.status_code === 200) {
-                let deleted = await sexoDAO.deleteSexo(parseInt(id))
+                let deleted = await sexoDAO.deleteSexoUsuario(parseInt(id))
                 if(deleted) {
                     return MESSAGE.SUCCESS_DELETE_ITEM
                 } else {
@@ -101,7 +101,7 @@ const excluirSexo = async function(id) {
 const listarSexo = async function() {
     try {
         let dadosSexo = {}
-        let resultSexo = await sexoDAO.selectAllSexo()
+        let resultSexo = await sexoDAO.selectAllSexoUsuario()
 
         if(resultSexo !== false && typeof(resultSexo) === 'object') {
             if(resultSexo.length > 0) {
@@ -129,18 +129,14 @@ const buscarSexo = async function(id) {
             return MESSAGE.ERROR_REQUIRED_FIELDS
         } else {
             let dadosSexo = {}
-            let resultSexo = await sexoDAO.selectByIdSexo(parseInt(id))
-            if(resultSexo !== false && typeof(resultSexo) === 'object') {
-                if(resultSexo.length > 0) {
-                    dadosSexo.status = true
-                    dadosSexo.status_code = 200
-                    dadosSexo.sexo = resultSexo[0]
-                    return dadosSexo
-                } else {
-                    return MESSAGE.ERROR_NOT_FOUND
-                }
+            let resultSexo = await sexoDAO.selectByIdSexoUsuario(parseInt(id))
+            if(resultSexo) {
+                dadosSexo.status = true
+                dadosSexo.status_code = 200
+                dadosSexo.sexo = resultSexo
+                return dadosSexo
             } else {
-                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+                return MESSAGE.ERROR_NOT_FOUND
             }
         }
     } catch(error) {

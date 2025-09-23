@@ -153,6 +153,7 @@ CREATE TABLE tbl_usuario (
     senha VARCHAR(10) NOT NULL,
     cpf VARCHAR(15) UNIQUE NOT NULL,
     cep VARCHAR(10) NOT NULL,
+    tipo_sanguineo VARCHAR(5) NOT NULL,
     data_nascimento DATE NOT NULL,
     foto_perfil VARCHAR(255),
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -247,12 +248,13 @@ CREATE TABLE tbl_agendamento (
     hora TIME NOT NULL,
     id_usuario INT,
     CONSTRAINT FK_agendamento_usuario
-    FOREIGN KEY (id_usuario)
-    REFERENCES tbl_usuario(id),
+        FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id),
     id_doacao INT,
     CONSTRAINT FK_agendamento_doacao
-    FOREIGN KEY (id_doacao)
-    REFERENCES tbl_doacao(id)
+        FOREIGN KEY (id_doacao) REFERENCES tbl_doacao(id),
+    id_hospital INT,
+    CONSTRAINT FK_agendamento_hospital
+        FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
 );
 
 -- Trigger para Padronização de Data de Agendamento
@@ -314,11 +316,7 @@ CREATE TABLE tbl_hospital (
     horario_abertura TIME NOT NULL,
     horario_fechamento TIME NOT NULL,
     foto VARCHAR(255) NOT NULL,
-    complemento VARCHAR(255),
-    id_agendamento INT,
-    CONSTRAINT FK_hospital_agendamento
-    FOREIGN KEY (id_agendamento)
-    REFERENCES tbl_agendamento(id)
+    complemento VARCHAR(255)
 );
 
 -- Trigger para padronização de dados
@@ -391,6 +389,3 @@ END //
 DELIMITER ;
 
 -- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-
-

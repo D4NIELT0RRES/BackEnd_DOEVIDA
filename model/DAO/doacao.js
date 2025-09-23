@@ -48,14 +48,14 @@ const insertDoacao = async function (doacao) {
 }
 
 //============================== ATUALIZAR ==============================
-const updateDoacao = async function (doacao) {
+const updateDoacao = async function (doacao, id) {
     try {
         let sql = `
             UPDATE tbl_doacao 
             SET data        = '${doacao.data}',
                 observacao  = '${doacao.observacao}',
                 foto        = '${doacao.foto}'
-            WHERE id = ${doacao.id};
+            WHERE id = ${id};
         `
 
         let result = await prisma.$executeRawUnsafe(sql)

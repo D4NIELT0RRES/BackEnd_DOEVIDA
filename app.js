@@ -1,267 +1,313 @@
 /*************************************************************************************************
- * OBJETIVO: API para projeto DOE VIDA
+ * OBJETIVO: API referente ao projeto DOE VIDA
  * DATA: 18/09/2025
+ * AUTOR: DANIEL TORRES
  * VERSÃO: 1.0
+ *================================================================================================ 
+ * 
+ * OBSERVAÇÃO:
+ * 
+ * ****************** Para configurar e instalar a API, precisamos das seguintes bibliotecas:
+ *                      -> express          npm install express --save
+ *                      -> cors             npm install cors --save
+ *                      -> body-parser      npm install body-parser --save
+ * 
+ * ****************** Para configurar e Instalar o acesso remoto ao Banco de Dados precisamos:
+ *                      -> prisma          npm install prisma --save (conexão com o BD)
+ *                      -> prisma/client   npm install @prisma/client --save (Executa scripts no BD)
+ * 
+ * ******************* Após a instalação do prisma e do prisma/client, devemos:
+ * 
+ *                     npx prisma init (Inicializar o prisma no projeto)
+ * 
+ * ******************* Para realizar o sincronismo do prisma com o BD, devemos executar o seguinte comando:
+ * 
+ *                     npx prisma migrate dev                   
+ * 
  *************************************************************************************************/
 
-const express = require('express')
-const cors = require('cors')
+//Import das bibliotecas para criar a API
+const express    = require('express')
+const cors       = require('cors')
 const bodyParser = require('body-parser')
 
-// Import dos controllers
+//Import das controllers para realizar o CRUD de dados
 const controllerAgendamento = require('./controller/agendamento/controllerAgendamento')
-const controllerBancoSangue = require('./controller/banco_sangue/controllerBancoSangue')
+const controllerEstoqueSangue = require('./controller/banco_de_sangue/controllerEstoqueSangue')
 const controllerCertificado = require('./controller/certificado/controllerCertificado')
-const controllerDoacao = require('./controller/doacao/controllerDoacao')
-const controllerHospital = require('./controller/hospital/controllerHospital')
-const controllerSexo = require('./controller/sexo/controllerSexo')
-const controllerTelefone = require('./controller/telefone/controllerTelefone')
-const controllerUsuario = require('./controller/usuario/controllerUsuario')
+const controllerDoacao      = require('./controller/doacao/controllerDoacao')
+const controllerHospital    = require('./controller/hospital/controllerHospital')
+const controllerSexo        = require('./controller/sexo/controllerSexo')
+const controllerTelefone    = require('./controller/telefone/controllerTelefone')
+const controllerUsuario     = require('./controller/usuario/controllerUsuario')
 
-const bodyParserJSON = bodyParser.json()
+//Estabelecendo o formato de dados que deverá chegar no body da requisição (POST ou PUT)
+const bodyParserJson = bodyParser.json()
+
+//Cria o objeto app para criar a API
 const app = express()
 
-// Configuração do CORS
-app.use((request, response, next) => {
+//Configuração do cors   
+app.use((request, response, next) =>{
     response.header('Access-Control-Allow-Origin', '*')
-    response.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+
     app.use(cors())
+    app.use(express.json())
     next()
 })
 
-/*************************** ENDPOINTS AGENDAMENTO ****************************/
-app.post('/v1/doevida/agendamento', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS AGENDAMENTO
+ *************************************************************************************************/
+app.post('/v1/doevida/agendamento', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultAgendamento = await controllerAgendamento.inserirAgendamento(dadosBody, contentType)
-    response.status(resultAgendamento.status_code).json(resultAgendamento)
+    let dadosBody   = request.body
+    let result      = await controllerAgendamento.inserirAgendamento(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/agendamento', cors(), async (request, response) => {
-    let resultAgendamento = await controllerAgendamento.listarAgendamento()
-    response.status(resultAgendamento.status_code).json(resultAgendamento)
+app.get('/v1/doevida/agendamento', cors(), async function(request, response){
+    let result = await controllerAgendamento.listarAgendamento()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/agendamento/:id', cors(), async (request, response) => {
-    let idAgendamento = request.params.id
-    let resultAgendamento = await controllerAgendamento.buscarAgendamento(idAgendamento)
-    response.status(resultAgendamento.status_code).json(resultAgendamento)
+app.get('/v1/doevida/agendamento/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerAgendamento.buscarAgendamento(id)
+    response.status(result.status_code).json(result)
 })
 
-app.delete('/v1/doevida/agendamento/:id', cors(), async (request, response) => {
-    let idAgendamento = request.params.id
-    let resultAgendamento = await controllerAgendamento.excluirAgendamento(idAgendamento)
-    response.status(resultAgendamento.status_code).json(resultAgendamento)
+app.delete('/v1/doevida/agendamento/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerAgendamento.excluirAgendamento(id)
+    response.status(result.status_code).json(result)
 })
 
-app.put('/v1/doevida/agendamento/:id', cors(), bodyParserJSON, async (request, response) => {
+app.put('/v1/doevida/agendamento/:id', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let idAgendamento = request.params.id
-    let dadosBody = request.body
-    let resultAgendamento = await controllerAgendamento.atualizarAgendamento(dadosBody, idAgendamento, contentType)
-    response.status(resultAgendamento.status_code).json(resultAgendamento)
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerAgendamento.atualizarAgendamento(dadosBody, id, contentType)
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS BANCO DE SANGUE ****************************/
-app.post('/v1/doevida/banco-sangue', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                  ENDPOINTS BANCO DE SANGUE
+ *************************************************************************************************/
+app.post('/v1/doevida/banco-sangue', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultBancoSangue = await controllerBancoSangue.inserirBancoSangue(dadosBody, contentType)
-    response.status(resultBancoSangue.status_code).json(resultBancoSangue)
+    let dadosBody   = request.body
+    let result      = await controllerEstoqueSangue.inserirBancoSangue(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/banco-sangue', cors(), async (request, response) => {
-    let resultBancoSangue = await controllerBancoSangue.listarBancoSangue()
-    response.status(resultBancoSangue.status_code).json(resultBancoSangue)
+app.get('/v1/doevida/banco-sangue', cors(), async function(request, response){
+    let result = await controllerEstoqueSangue.listarBancoSangue()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/banco-sangue/:id', cors(), async (request, response) => {
-    let idBancoSangue = request.params.id
-    let resultBancoSangue = await controllerBancoSangue.buscarBancoSangue(idBancoSangue)
-    response.status(resultBancoSangue.status_code).json(resultBancoSangue)
+app.get('/v1/doevida/banco-sangue/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerEstoqueSangue.buscarBancoSangue(id)
+    response.status(result.status_code).json(result)
 })
 
-app.delete('/v1/doevida/banco-sangue/:id', cors(), async (request, response) => {
-    let idBancoSangue = request.params.id
-    let resultBancoSangue = await controllerBancoSangue.excluirBancoSangue(idBancoSangue)
-    response.status(resultBancoSangue.status_code).json(resultBancoSangue)
+app.delete('/v1/doevida/banco-sangue/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerEstoqueSangue.excluirBancoSangue(id)
+    response.status(result.status_code).json(result)
 })
 
-app.put('/v1/doevida/banco-sangue/:id', cors(), bodyParserJSON, async (request, response) => {
+app.put('/v1/doevida/banco-sangue/:id', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let idBancoSangue = request.params.id
-    let dadosBody = request.body
-    let resultBancoSangue = await controllerBancoSangue.atualizarBancoSangue(dadosBody, idBancoSangue, contentType)
-    response.status(resultBancoSangue.status_code).json(resultBancoSangue)
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerEstoqueSangue.atualizarBancoSangue(dadosBody, id, contentType)
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS CERTIFICADO ****************************/
-app.post('/v1/doevida/certificado', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS CERTIFICADO
+ *************************************************************************************************/
+app.post('/v1/doevida/certificado', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultCertificado = await controllerCertificado.inserirCertificado(dadosBody, contentType)
-    response.status(resultCertificado.status_code).json(resultCertificado)
+    let dadosBody   = request.body
+    let result      = await controllerCertificado.inserirCertificado(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/certificado', cors(), async (request, response) => {
-    let resultCertificado = await controllerCertificado.listarCertificado()
-    response.status(resultCertificado.status_code).json(resultCertificado)
+app.get('/v1/doevida/certificado', cors(), async function(request, response){
+    let result = await controllerCertificado.listarCertificado()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/certificado/:id', cors(), async (request, response) => {
-    let idCertificado = request.params.id
-    let resultCertificado = await controllerCertificado.buscarCertificado(idCertificado)
-    response.status(resultCertificado.status_code).json(resultCertificado)
+app.get('/v1/doevida/certificado/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerCertificado.buscarCertificado(id)
+    response.status(result.status_code).json(result)
 })
 
-app.delete('/v1/doevida/certificado/:id', cors(), async (request, response) => {
-    let idCertificado = request.params.id
-    let resultCertificado = await controllerCertificado.excluirCertificado(idCertificado)
-    response.status(resultCertificado.status_code).json(resultCertificado)
+app.delete('/v1/doevida/certificado/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerCertificado.excluirCertificado(id)
+    response.status(result.status_code).json(result)
 })
 
-app.put('/v1/doevida/certificado/:id', cors(), bodyParserJSON, async (request, response) => {
+app.put('/v1/doevida/certificado/:id', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let idCertificado = request.params.id
-    let dadosBody = request.body
-    let resultCertificado = await controllerCertificado.atualizarCertificado(dadosBody, idCertificado, contentType)
-    response.status(resultCertificado.status_code).json(resultCertificado)
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerCertificado.atualizarCertificado(dadosBody, id, contentType)
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS DOAÇÃO ****************************/
-app.post('/v1/doevida/doacao', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS DOAÇÃO
+ *************************************************************************************************/
+app.post('/v1/doevida/doacao', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultDoacao = await controllerDoacao.inserirDoacao(dadosBody, contentType)
-    response.status(resultDoacao.status_code).json(resultDoacao)
+    let dadosBody   = request.body
+    let result      = await controllerDoacao.inserirDoacao(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/doacao', cors(), async (request, response) => {
-    let resultDoacao = await controllerDoacao.listarDoacao()
-    response.status(resultDoacao.status_code).json(resultDoacao)
+app.get('/v1/doevida/doacao', cors(), async function(request, response){
+    let result = await controllerDoacao.listarDoacao()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/doacao/:id', cors(), async (request, response) => {
-    let idDoacao = request.params.id
-    let resultDoacao = await controllerDoacao.buscarDoacao(idDoacao)
-    response.status(resultDoacao.status_code).json(resultDoacao)
+app.get('/v1/doevida/doacao/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerDoacao.buscarDoacao(id)
+    response.status(result.status_code).json(result)
 })
 
-app.delete('/v1/doevida/doacao/:id', cors(), async (request, response) => {
-    let idDoacao = request.params.id
-    let resultDoacao = await controllerDoacao.excluirDoacao(idDoacao)
-    response.status(resultDoacao.status_code).json(resultDoacao)
+app.delete('/v1/doevida/doacao/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerDoacao.excluirDoacao(id)
+    response.status(result.status_code).json(result)
 })
 
-app.put('/v1/doevida/doacao/:id', cors(), bodyParserJSON, async (request, response) => {
+app.put('/v1/doevida/doacao/:id', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let idDoacao = request.params.id
-    let dadosBody = request.body
-    let resultDoacao = await controllerDoacao.atualizarDoacao(dadosBody, idDoacao, contentType)
-    response.status(resultDoacao.status_code).json(resultDoacao)
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerDoacao.atualizarDoacao(dadosBody, id, contentType)
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS HOSPITAL ****************************/
-app.post('/v1/doevida/hospital', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS HOSPITAL
+ *************************************************************************************************/
+app.post('/v1/doevida/hospital', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultHospital = await controllerHospital.inserirHospital(dadosBody, contentType)
-    response.status(resultHospital.status_code).json(resultHospital)
+    let dadosBody   = request.body
+    let result      = await controllerHospital.inserirHospital(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/hospital', cors(), async (request, response) => {
-    let resultHospital = await controllerHospital.listarHospital()
-    response.status(resultHospital.status_code).json(resultHospital)
+app.get('/v1/doevida/hospital', cors(), async function(request, response){
+    let result = await controllerHospital.listarHospital()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/hospital/:id', cors(), async (request, response) => {
-    let idHospital = request.params.id
-    let resultHospital = await controllerHospital.buscarHospital(idHospital)
-    response.status(resultHospital.status_code).json(resultHospital)
+app.get('/v1/doevida/hospital/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerHospital.buscarHospital(id)
+    response.status(result.status_code).json(result)
 })
 
-app.delete('/v1/doevida/hospital/:id', cors(), async (request, response) => {
-    let idHospital = request.params.id
-    let resultHospital = await controllerHospital.excluirHospital(idHospital)
-    response.status(resultHospital.status_code).json(resultHospital)
+app.delete('/v1/doevida/hospital/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerHospital.excluirHospital(id)
+    response.status(result.status_code).json(result)
 })
 
-app.put('/v1/doevida/hospital/:id', cors(), bodyParserJSON, async (request, response) => {
+app.put('/v1/doevida/hospital/:id', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let idHospital = request.params.id
-    let dadosBody = request.body
-    let resultHospital = await controllerHospital.atualizarHospital(dadosBody, idHospital, contentType)
-    response.status(resultHospital.status_code).json(resultHospital)
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerHospital.atualizarHospital(dadosBody, id, contentType)
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS SEXO USUÁRIO ****************************/
-app.post('/v1/doevida/sexo-usuario', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS SEXO USUÁRIO
+ *************************************************************************************************/
+app.post('/v1/doevida/sexo-usuario', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultSexo = await controllerSexo.inserirSexo(dadosBody, contentType)
-    response.status(resultSexo.status_code).json(resultSexo)
+    let dadosBody   = request.body
+    let result      = await controllerSexo.inserirSexo(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/sexo-usuario', cors(), async (request, response) => {
-    let resultSexo = await controllerSexo.listarSexo()
-    response.status(resultSexo.status_code).json(resultSexo)
+app.get('/v1/doevida/sexo-usuario', cors(), async function(request, response){
+    let result = await controllerSexo.listarSexo()
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS TELEFONE ****************************/
-app.post('/v1/doevida/telefone', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS TELEFONE
+ *************************************************************************************************/
+app.post('/v1/doevida/telefone', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultTelefone = await controllerTelefone.inserirTelefone(dadosBody, contentType)
-    response.status(resultTelefone.status_code).json(resultTelefone)
+    let dadosBody   = request.body
+    let result      = await controllerTelefone.inserirTelefone(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/telefone', cors(), async (request, response) => {
-    let resultTelefone = await controllerTelefone.listarTelefone()
-    response.status(resultTelefone.status_code).json(resultTelefone)
+app.get('/v1/doevida/telefone', cors(), async function(request, response){
+    let result = await controllerTelefone.listarTelefone()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/telefone/:id', cors(), async (request, response) => {
-    let idTelefone = request.params.id
-    let resultTelefone = await controllerTelefone.buscarTelefone(idTelefone)
-    response.status(resultTelefone.status_code).json(resultTelefone)
+app.get('/v1/doevida/telefone/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerTelefone.buscarTelefone(id)
+    response.status(result.status_code).json(result)
 })
 
-/*************************** ENDPOINTS USUÁRIO ****************************/
-app.post('/v1/doevida/usuario', cors(), bodyParserJSON, async (request, response) => {
+/*************************************************************************************************
+ *                                      ENDPOINTS USUÁRIO
+ *************************************************************************************************/
+app.post('/v1/doevida/usuario', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let resultUsuario = await controllerUsuario.inserirUsuario(dadosBody, contentType)
-    response.status(resultUsuario.status_code).json(resultUsuario)
+    let dadosBody   = request.body
+    let result      = await controllerUsuario.inserirUsuario(dadosBody, contentType)
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/usuario', cors(), async (request, response) => {
-    let resultUsuario = await controllerUsuario.listarUsuario()
-    response.status(resultUsuario.status_code).json(resultUsuario)
+app.get('/v1/doevida/usuario', cors(), async function(request, response){
+    let result = await controllerUsuario.listarUsuario()
+    response.status(result.status_code).json(result)
 })
 
-app.get('/v1/doevida/usuario/:id', cors(), async (request, response) => {
-    let idUsuario = request.params.id
-    let resultUsuario = await controllerUsuario.buscarUsuario(idUsuario)
-    response.status(resultUsuario.status_code).json(resultUsuario)
+app.get('/v1/doevida/usuario/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerUsuario.buscarUsuario(id)
+    response.status(result.status_code).json(result)
 })
 
-app.delete('/v1/doevida/usuario/:id', cors(), async (request, response) => {
-    let idUsuario = request.params.id
-    let resultUsuario = await controllerUsuario.excluirUsuario(idUsuario)
-    response.status(resultUsuario.status_code).json(resultUsuario)
+app.delete('/v1/doevida/usuario/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerUsuario.excluirUsuario(id)
+    response.status(result.status_code).json(result)
 })
 
-app.put('/v1/doevida/usuario/:id', cors(), bodyParserJSON, async (request, response) => {
+app.put('/v1/doevida/usuario/:id', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
-    let idUsuario = request.params.id
-    let dadosBody = request.body
-    let resultUsuario = await controllerUsuario.atualizarUsuario(dadosBody, idUsuario, contentType)
-    response.status(resultUsuario.status_code).json(resultUsuario)
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerUsuario.atualizarUsuario(dadosBody, id, contentType)
+    response.status(result.status_code).json(result)
 })
 
-// Iniciando o servidor
+/*************************************************************************************************
+ *                                      INICIANDO SERVIDOR
+ *************************************************************************************************/
 const PORT = process.env.PORT || 8080
-app.listen(PORT, () => {
+app.listen(PORT, function(){
     console.log(`API DOE VIDA rodando na porta ${PORT}`)
 })
 

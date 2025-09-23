@@ -9,6 +9,7 @@ const MESSAGE = require('../../modulo/config.js')
 const agendamentoDAO = require('../../model/DAO/agendamento.js')
 const controllerUsuario = require('../usuario/controllerUsuario.js')
 const controllerDoacao = require('../doacao/controllerDoacao.js')
+const controllerHospital = require('../hospital/controllerHospital.js')
 
 //Inserir novo agendamento
 const inserirAgendamento = async function(agendamento, contentType){
@@ -21,7 +22,8 @@ const inserirAgendamento = async function(agendamento, contentType){
            !agendamento.data ||
            !agendamento.hora ||
            !agendamento.id_usuario || isNaN(agendamento.id_usuario) || agendamento.id_usuario <= 0 ||
-           !agendamento.id_doacao || isNaN(agendamento.id_doacao) || agendamento.id_doacao <= 0
+           !agendamento.id_doacao || isNaN(agendamento.id_doacao) || agendamento.id_doacao <= 0 ||
+           !agendamento.id_hospital || isNaN(agendamento.id_hospital) || agendamento.id_hospital <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
@@ -36,6 +38,12 @@ const inserirAgendamento = async function(agendamento, contentType){
         const doacaoExistente = await controllerDoacao.buscarDoacao(agendamento.id_doacao)
         if(!doacaoExistente || doacaoExistente.status_code !== 200){
             return { status_code: 404, message: "Doação não encontrada" }
+        }
+
+        //Valida se o hospital existe
+        const hospitalExistente = await controllerHospital.buscarHospital(agendamento.id_hospital)
+        if(!hospitalExistente || hospitalExistente.status_code !== 200){
+            return { status_code: 404, message: "Hospital não encontrado" }
         }
 
         const resultAgendamento = await agendamentoDAO.insertAgendamento(agendamento)
@@ -67,6 +75,7 @@ const atualizarAgendamento = async function(agendamento, id, contentType){
            !agendamento.hora ||
            !agendamento.id_usuario || isNaN(agendamento.id_usuario) || agendamento.id_usuario <= 0 ||
            !agendamento.id_doacao || isNaN(agendamento.id_doacao) || agendamento.id_doacao <= 0 ||
+           !agendamento.id_hospital || isNaN(agendamento.id_hospital) || agendamento.id_hospital <= 0 ||
            !id || isNaN(id) || id <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -86,6 +95,11 @@ const atualizarAgendamento = async function(agendamento, id, contentType){
         const doacaoExistente = await controllerDoacao.buscarDoacao(agendamento.id_doacao)
         if(!doacaoExistente || doacaoExistente.status_code !== 200){
             return { status_code: 404, message: "Doação não encontrada" }
+        }
+
+        const hospitalExistente = await controllerHospital.buscarHospital(agendamento.id_hospital)
+        if(!hospitalExistente || hospitalExistente.status_code !== 200){
+            return { status_code: 404, message: "Hospital não encontrado" }
         }
 
         const result = await agendamentoDAO.updateAgendamento(agendamento, parseInt(id))
@@ -142,10 +156,16 @@ const listarAgendamento = async function(){
             const doacao = await controllerDoacao.buscarDoacao(item.id_doacao)
             item.doacao = doacao?.doacao || null
 
+            const hospital = await controllerHospital.buscarHospital(item.id_hospital)
+            item.hospital = hospital?.hospital || null
+
             delete item.id_usuario
             delete item.id_doacao
+            delete item.id_hospital
 
             arrayAgendamentos.push(item)
+
+
         }
 
         return {
@@ -180,8 +200,12 @@ const buscarAgendamento = async function(id){
         const doacao = await controllerDoacao.buscarDoacao(agendamento.id_doacao)
         agendamento.doacao = doacao?.doacao || null
 
+        const hospital = await controllerHospital.buscarHospital(agendamento.id_hospital)
+        agendamento.hospital = hospital?.hospital || null
+
         delete agendamento.id_usuario
         delete agendamento.id_doacao
+        delete agendamento.id_hospital
 
         return {
             status: true,

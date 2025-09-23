@@ -1,58 +1,52 @@
 /***************************************************************************************
  * OBJETIVO: Model responsável pelo CRUD de dados referente a HOSPITAL no BANCO DE DADOS.
- * DATA: 18/09/2025
+ * DATA: 22/09/2025
  * AUTOR: Daniel Torres
- * Versão: 1.0
+ * Versão: 1.1
  ***************************************************************************************/
 
-//Import da biblioteca do prisma client para executar scripts no BD
 const { PrismaClient } = require('@prisma/client')
-
-//Instancia da classe do prisma client
 const prisma = new PrismaClient()
 
 //============================== INSERIR ==============================
 const insertHospital = async function(hospital){
     try{
-        let sql = `insert into tbl_hospital(
-                                        nome,
-                                        email,
-                                        senha,
-                                        cnpj,
-                                        crm,
-                                        cep,
-                                        telefone,
-                                        capacidade_maxima,
-                                        convenios,
-                                        horario_abertura,
-                                        horario_fechamento,
-                                        foto,
-                                        complemento,
-                                        id_agendamento
-                                    ) values (
-                                        '${hospital.nome}',
-                                        '${hospital.email}',
-                                        '${hospital.senha}',
-                                        '${hospital.cnpj}',
-                                        '${hospital.crm}',
-                                        '${hospital.cep}',
-                                        '${hospital.telefone}',
-                                        ${hospital.capacidade_maxima},
-                                        '${hospital.convenios}',
-                                        '${hospital.horario_abertura}',
-                                        '${hospital.horario_fechamento}',
-                                        '${hospital.foto}',
-                                        ${hospital.complemento ? `'${hospital.complemento}'` : null},
-                                        ${hospital.id_agendamento || null}
-                                    );`
+        let sql = `INSERT INTO tbl_hospital(
+                        nome,
+                        email,
+                        senha,
+                        cnpj,
+                        crm,
+                        cep,
+                        telefone,
+                        capacidade_maxima,
+                        convenios,
+                        horario_abertura,
+                        horario_fechamento,
+                        foto,
+                        complemento
+                    ) VALUES (
+                        '${hospital.nome}',
+                        '${hospital.email}',
+                        '${hospital.senha}',
+                        '${hospital.cnpj}',
+                        '${hospital.crm}',
+                        '${hospital.cep}',
+                        '${hospital.telefone}',
+                        ${hospital.capacidade_maxima},
+                        '${hospital.convenios}',
+                        '${hospital.horario_abertura}',
+                        '${hospital.horario_fechamento}',
+                        '${hospital.foto}',
+                        ${hospital.complemento ? `'${hospital.complemento}'` : null}
+                    );`
 
         let result = await prisma.$executeRawUnsafe(sql)
 
         if(result){
-            // Retorna o último registro inserido (pegar ID recém criado)
             let sqlSelect = `SELECT * FROM tbl_hospital WHERE email = '${hospital.email}' ORDER BY id DESC LIMIT 1`
             let criado = await prisma.$queryRawUnsafe(sqlSelect)
-            return criado[0]
+            return criado[0]   // Retorna apenas o registro criado
         }else{
             return false
         }
@@ -63,9 +57,9 @@ const insertHospital = async function(hospital){
 }
 
 //============================== ATUALIZAR ==============================
-const updateHospital = async function(hospital){
+const updateHospital = async function(hospital, id){
     try{
-        let sql = `update tbl_hospital set 
+        let sql = `UPDATE tbl_hospital SET
                         nome              = '${hospital.nome}',
                         email             = '${hospital.email}',
                         senha             = '${hospital.senha}',
@@ -78,17 +72,11 @@ const updateHospital = async function(hospital){
                         horario_abertura  = '${hospital.horario_abertura}',
                         horario_fechamento= '${hospital.horario_fechamento}',
                         foto              = '${hospital.foto}',
-                        complemento       = ${hospital.complemento ? `'${hospital.complemento}'` : null},
-                        id_agendamento    = ${hospital.id_agendamento || null}
-                    where id = ${hospital.id}`
+                        complemento       = ${hospital.complemento ? `'${hospital.complemento}'` : null}
+                    WHERE id = ${id}`
 
         let result = await prisma.$executeRawUnsafe(sql)
-
-        if(result){
-            return true
-        }else{
-            return false
-        }
+        return result ? true : false
     }catch(error){
         console.log(error)
         return false
@@ -98,15 +86,9 @@ const updateHospital = async function(hospital){
 //============================== DELETAR ==============================
 const deleteHospital = async function(id){
     try{
-        let sql = `delete from tbl_hospital where id = ${id}`
-
+        let sql = `DELETE FROM tbl_hospital WHERE id = ${id}`
         let result = await prisma.$executeRawUnsafe(sql)
-
-        if(result){
-            return true
-        }else{
-            return false
-        }
+        return result ? true : false
     }catch(error){
         console.log(error)
         return false
@@ -116,15 +98,9 @@ const deleteHospital = async function(id){
 //============================== LISTAR TODOS ==============================
 const selectAllHospital = async function(){
     try{
-        let sql = `select * from tbl_hospital`
-
+        let sql = `SELECT * FROM tbl_hospital ORDER BY id ASC`
         let result = await prisma.$queryRawUnsafe(sql)
-
-        if(result && result.length > 0){
-            return result
-        }else{
-            return false
-        }
+        return result.length > 0 ? result : false
     }catch(error){
         console.log(error)
         return false
@@ -134,15 +110,9 @@ const selectAllHospital = async function(){
 //============================== BUSCAR POR ID ==============================
 const selectByIdHospital = async function(id){
     try{
-        let sql = `select * from tbl_hospital where id = ${id}`
-
+        let sql = `SELECT * FROM tbl_hospital WHERE id = ${id}`
         let result = await prisma.$queryRawUnsafe(sql)
-
-        if(result && result.length > 0){
-            return result[0]
-        }else{
-            return false
-        }
+        return result.length > 0 ? result[0] : false
     }catch(error){
         console.log(error)
         return false
@@ -152,15 +122,9 @@ const selectByIdHospital = async function(id){
 //============================== BUSCAR POR EMAIL ==============================
 const selectByEmailHospital = async function(email){
     try{
-        let sql = `select * from tbl_hospital where email = '${email}'`
-
+        let sql = `SELECT * FROM tbl_hospital WHERE email = '${email}'`
         let result = await prisma.$queryRawUnsafe(sql)
-
-        if(result && result.length > 0){
-            return result[0]
-        }else{
-            return false
-        }
+        return result.length > 0 ? result[0] : false
     }catch(error){
         console.log(error)
         return false
@@ -170,15 +134,9 @@ const selectByEmailHospital = async function(email){
 //============================== BUSCAR POR CNPJ ==============================
 const selectByCnpjHospital = async function(cnpj){
     try{
-        let sql = `select * from tbl_hospital where cnpj = '${cnpj}'`
-
+        let sql = `SELECT * FROM tbl_hospital WHERE cnpj = '${cnpj}'`
         let result = await prisma.$queryRawUnsafe(sql)
-
-        if(result && result.length > 0){
-            return result[0]
-        }else{
-            return false
-        }
+        return result.length > 0 ? result[0] : false
     }catch(error){
         console.log(error)
         return false

@@ -23,7 +23,7 @@ const insertUsuario = async function (usuario) {
                 cep,
                 data_nascimento,
                 foto_perfil,
-                id_banco_sangue,
+                tipo_sanguineo,
                 id_sexo
             ) VALUES (
                 '${usuario.nome}',
@@ -33,7 +33,7 @@ const insertUsuario = async function (usuario) {
                 '${usuario.cep}',
                 '${usuario.data_nascimento}',
                 '${usuario.foto_perfil || ''}',
-                ${usuario.id_banco_sangue || null},
+                '${usuario.tipo_sanguineo}',
                 ${usuario.id_sexo || null}
             );
         `
@@ -43,9 +43,23 @@ const insertUsuario = async function (usuario) {
         if (result) {
             // Buscar o último usuário inserido com base no e-mail
             let sqlSelect = `
-                SELECT * FROM tbl_usuario
-                WHERE email = '${usuario.email}'
-                ORDER BY id DESC
+                SELECT 
+                    u.id,
+                    u.nome,
+                    u.email,
+                    u.senha,
+                    u.cpf,
+                    u.cep,
+                    u.tipo_sanguineo,
+                    u.data_nascimento,
+                    u.foto_perfil,
+                    u.data_criacao,
+                    u.data_atualizacao,
+                    s.sexo as nome_sexo
+                FROM tbl_usuario u
+                LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
+                WHERE u.email = '${usuario.email}'
+                ORDER BY u.id DESC
                 LIMIT 1
             `
             let criado = await prisma.$queryRawUnsafe(sqlSelect)
@@ -71,7 +85,7 @@ const updateUsuario = async function (usuario) {
                 cep              = '${usuario.cep}',
                 data_nascimento  = '${usuario.data_nascimento}',
                 foto_perfil      = '${usuario.foto_perfil || ''}',
-                id_banco_sangue  = ${usuario.id_banco_sangue || null},
+                tipo_sanguineo   = '${usuario.tipo_sanguineo}',
                 id_sexo          = ${usuario.id_sexo || null}
             WHERE id = ${usuario.id};
         `
@@ -99,7 +113,24 @@ const deleteUsuario = async function (id) {
 //============================== LISTAR TODOS ==============================
 const selectAllUsuario = async function () {
     try {
-        let sql = `SELECT * FROM tbl_usuario ORDER BY id ASC`
+        let sql = `
+            SELECT 
+                u.id,
+                u.nome,
+                u.email,
+                u.senha,
+                u.cpf,
+                u.cep,
+                u.tipo_sanguineo,
+                u.data_nascimento,
+                u.foto_perfil,
+                u.data_criacao,
+                u.data_atualizacao,
+                s.sexo as nome_sexo
+            FROM tbl_usuario u
+            LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
+            ORDER BY u.id ASC
+        `
         let result = await prisma.$queryRawUnsafe(sql)
         return result.length > 0 ? result : false
     } catch (error) {
@@ -111,7 +142,24 @@ const selectAllUsuario = async function () {
 //============================== BUSCAR POR ID ==============================
 const selectByIdUsuario = async function (id) {
     try {
-        let sql = `SELECT * FROM tbl_usuario WHERE id = ${id}`
+        let sql = `
+            SELECT 
+                u.id,
+                u.nome,
+                u.email,
+                u.senha,
+                u.cpf,
+                u.cep,
+                u.tipo_sanguineo,
+                u.data_nascimento,
+                u.foto_perfil,
+                u.data_criacao,
+                u.data_atualizacao,
+                s.sexo as nome_sexo
+            FROM tbl_usuario u
+            LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
+            WHERE u.id = ${id}
+        `
         let result = await prisma.$queryRawUnsafe(sql)
         return result.length > 0 ? result[0] : false
     } catch (error) {
@@ -123,7 +171,24 @@ const selectByIdUsuario = async function (id) {
 //============================== BUSCAR POR EMAIL ==============================
 const selectByEmailUsuario = async function (email) {
     try {
-        let sql = `SELECT * FROM tbl_usuario WHERE email = '${email}'`
+        let sql = `
+            SELECT 
+                u.id,
+                u.nome,
+                u.email,
+                u.senha,
+                u.cpf,
+                u.cep,
+                u.tipo_sanguineo,
+                u.data_nascimento,
+                u.foto_perfil,
+                u.data_criacao,
+                u.data_atualizacao,
+                s.sexo as nome_sexo
+            FROM tbl_usuario u
+            LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
+            WHERE u.email = '${email}'
+        `
         let result = await prisma.$queryRawUnsafe(sql)
         return result.length > 0 ? result[0] : false
     } catch (error) {
@@ -135,7 +200,24 @@ const selectByEmailUsuario = async function (email) {
 //============================== BUSCAR POR NOME ==============================
 const selectByNomeUsuario = async function (nome) {
     try {
-        let sql = `SELECT * FROM tbl_usuario WHERE nome LIKE '%${nome}%'`
+        let sql = `
+            SELECT 
+                u.id,
+                u.nome,
+                u.email,
+                u.senha,
+                u.cpf,
+                u.cep,
+                u.tipo_sanguineo,
+                u.data_nascimento,
+                u.foto_perfil,
+                u.data_criacao,
+                u.data_atualizacao,
+                s.sexo as nome_sexo
+            FROM tbl_usuario u
+            LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
+            WHERE u.nome LIKE '%${nome}%'
+        `
         let result = await prisma.$queryRawUnsafe(sql)
         return result.length > 0 ? result : false
     } catch (error) {
