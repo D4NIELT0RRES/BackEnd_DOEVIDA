@@ -101,6 +101,23 @@ app.get('/v1/doevida/agendamento/status/:status', cors(), async function(request
     response.json(result)
 })
 
+// Rotas para Agendamento
+app.get('/v1/agendamento/data/:data', cors(), async function(request, response) {
+    let data = request.params.data
+    let dadosAgendamento = await controllerAgendamento.getAgendamentoByData(data)
+    response.status(dadosAgendamento.status)
+    response.json(dadosAgendamento)
+})
+
+app.get('/v1/agendamento/disponibilidade', cors(), async function(request, response) {
+    let data = request.query.data
+    let hora = request.query.hora
+    let id_hospital = request.query.id_hospital
+    let disponibilidade = await controllerAgendamento.verificarDisponibilidade(data, hora, id_hospital)
+    response.status(disponibilidade.status)
+    response.json(disponibilidade)
+})
+
 /*************************************************************************************************
  *                                  ENDPOINTS BANCO DE SANGUE
  *************************************************************************************************/
@@ -204,6 +221,22 @@ app.put('/v1/doevida/doacao/:id', cors(), bodyParserJson, async function(request
     let dadosBody   = request.body
     let result      = await controllerDoacao.atualizarDoacao(dadosBody, id, contentType)
     response.status(result.status_code).json(result)
+})
+
+// Rotas para Doação
+app.get('/v1/doacao/historico/:id_usuario', cors(), async function(request, response) {
+    let id = request.params.id_usuario
+    let historico = await controllerDoacao.getHistoricoDoacao(id)
+    response.status(historico.status)
+    response.json(historico)
+})
+
+app.get('/v1/doacao/compatibilidade', cors(), async function(request, response) {
+    let tipo_doador = request.query.tipo_doador
+    let tipo_receptor = request.query.tipo_receptor
+    let compatibilidade = await controllerDoacao.verificarCompatibilidade(tipo_doador, tipo_receptor)
+    response.status(compatibilidade.status)
+    response.json(compatibilidade)
 })
 
 /*************************************************************************************************

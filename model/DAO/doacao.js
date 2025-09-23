@@ -115,10 +115,57 @@ const selectByIdDoacao = async function (id) {
     }
 }
 
+//============================== HISTÓRICO DE DOAÇÕES ==============================
+const historicoDoacao = async function (id_usuario) {
+    try {
+        let sql = `
+            SELECT 
+                d.*,
+                h.nome as nome_hospital,
+                a.data as data_agendamento,
+                a.status as status_agendamento
+            FROM tbl_doacao d
+            INNER JOIN tbl_agendamento a ON d.id = a.id_doacao
+            INNER JOIN tbl_hospital h ON a.id_hospital = h.id
+            WHERE a.id_usuario = ${id_usuario}
+            ORDER BY d.data DESC`
+        
+        let result = await prisma.$queryRawUnsafe(sql)
+        return result
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
+//============================== VERIFICAR COMPATIBILIDADE ==============================
+const verificarCompatibilidade = async function (tipo_doador, tipo_receptor) {
+    const compatibilidade = {
+        'A+': ['A+', 'AB+'],
+        'A-': ['A+', 'A-', 'AB+', 'AB-'],
+        'B+': ['B+', 'AB+'],
+        'B-': ['B+', 'B-', 'AB+', 'AB-'],
+        'AB+': ['AB+'],
+        'AB-': ['AB+', 'AB-'],
+        'O+': ['A+', 'B+', 'AB+', 'O+'],
+        'O-': ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    }
+
+    return {
+        compativel: compatibilidade[tipo_doador]?.includes(tipo_receptor) || false,
+        pode_doar_para: compatibilidade[tipo_doador] || [],
+        pode_receber_de: Object.entries(compatibilidade)
+            .filter(([_, receptores]) => receptores.includes(tipo_doador))
+            .map(([tipo]) => tipo)
+    }
+}
+
 module.exports = {
     insertDoacao,
     updateDoacao,
     deleteDoacao,
     selectAllDoacao,
-    selectByIdDoacao
+    selectByIdDoacao,
+    historicoDoacao,
+    verificarCompatibilidade
 }

@@ -311,10 +311,10 @@ CREATE TABLE tbl_hospital (
     crm VARCHAR(255) NOT NULL,
     cep VARCHAR(10) NOT NULL,
     telefone VARCHAR(15) NOT NULL,
-    capacidade_maxima INT NOT NULL,
+    capacidade_maxima INT NOT NULL DEFAULT 10,
     convenios VARCHAR(255) NOT NULL,
-    horario_abertura TIME NOT NULL,
-    horario_fechamento TIME NOT NULL,
+    horario_abertura TIME NOT NULL DEFAULT '08:00:00',
+    horario_fechamento TIME NOT NULL DEFAULT '18:00:00',
     foto VARCHAR(255) NOT NULL,
     complemento VARCHAR(255)
 );
@@ -389,3 +389,26 @@ END //
 DELIMITER ;
 
 -- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+-- Primeiro, vamos garantir que a coluna status seja corrigida
+ALTER TABLE tbl_agendamento 
+DROP COLUMN status;
+
+ALTER TABLE tbl_agendamento
+ADD COLUMN status ENUM('Agendado', 'Em espera', 'Concluído') NOT NULL DEFAULT 'Em espera';
+
+-- Agora as alterações do hospital
+ALTER TABLE tbl_hospital 
+MODIFY COLUMN capacidade_maxima INT NOT NULL DEFAULT 10,
+MODIFY COLUMN horario_abertura TIME NOT NULL DEFAULT '08:00:00',
+MODIFY COLUMN horario_fechamento TIME NOT NULL DEFAULT '18:00:00';
+
+-- Por fim, as alterações da doação
+ALTER TABLE tbl_doacao 
+MODIFY COLUMN observacao TEXT NULL,
+MODIFY COLUMN foto VARCHAR(255) NULL;
+
+-- Criar índices para otimização
+CREATE INDEX IF NOT EXISTS idx_agendamento_data ON tbl_agendamento(data);
+CREATE INDEX IF NOT EXISTS idx_agendamento_status ON tbl_agendamento(status);
+CREATE INDEX IF NOT EXISTS idx_agendamento_hospital ON tbl_agendamento(id_hospital);

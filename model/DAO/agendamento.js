@@ -218,6 +218,46 @@ const selectByHospitalAgendamento = async function (id_hospital) {
     }
 }
 
+//============================== BUSCAR POR DATA ==============================
+const selectByDataAgendamento = async function (data) {
+    try {
+        let sql = `SELECT * FROM tbl_agendamento WHERE data = '${data}' ORDER BY hora ASC`
+        let result = await prisma.$queryRawUnsafe(sql)
+        return result
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
+//============================== VERIFICAR DISPONIBILIDADE ==============================
+const verificarDisponibilidade = async function (data, hora, id_hospital) {
+    try {
+        let sql = `SELECT COUNT(*) as total 
+                   FROM tbl_agendamento 
+                   WHERE data = '${data}' 
+                   AND hora = '${hora}' 
+                   AND id_hospital = ${id_hospital}`
+        
+        let result = await prisma.$queryRawUnsafe(sql)
+        
+        // Buscar capacidade máxima do hospital
+        let sqlHospital = `SELECT capacidade_maxima 
+                          FROM tbl_hospital 
+                          WHERE id = ${id_hospital}`
+        
+        let hospitalInfo = await prisma.$queryRawUnsafe(sqlHospital)
+        
+        return {
+            disponivel: result[0].total < hospitalInfo[0].capacidade_maxima,
+            vagas_restantes: hospitalInfo[0].capacidade_maxima - result[0].total
+        }
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
 module.exports = {
     insertAgendamento,
     updateAgendamento,
@@ -227,5 +267,7 @@ module.exports = {
     selectByStatusAgendamento,
     selectByUsuarioAgendamento,
     selectByDoacaoAgendamento,
-    selectByHospitalAgendamento
+    selectByHospitalAgendamento,
+    selectByDataAgendamento,
+    verificarDisponibilidade
 }
