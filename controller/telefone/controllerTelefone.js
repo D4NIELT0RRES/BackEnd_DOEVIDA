@@ -15,8 +15,10 @@ const telefoneDAO = require('../../model/DAO/telefone')
 const inserirTelefone = async function(telefone, contentType) {
     try {
         if(contentType === 'application/json') {
-            if(telefone.tipo === undefined || telefone.tipo === '' || telefone.tipo === null || telefone.tipo.length > 30 ||
-               telefone.numero === undefined || telefone.numero === '' || telefone.numero === null || telefone.numero.length > 15) {
+            if(
+                telefone.tipo   === undefined || telefone.tipo   === '' || telefone.tipo   === null || telefone.tipo.length   > 30 ||
+                telefone.numero === undefined || telefone.numero === '' || telefone.numero === null || telefone.numero.length > 15
+            ) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS // 400
             } else {
                 //Encaminha os dados para o DAO
@@ -151,10 +153,66 @@ const buscarTelefone = async function(id) {
     }
 }
 
+//Função para buscar telefone pelo número
+const buscarTelefonePorNumero = async function(numero) {
+    try {
+        if(numero === undefined || numero === '' || numero === null || numero.length > 15) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        } else {
+            let dadosTelefone = {}
+            let resultTelefone = await telefoneDAO.selectByNumeroTelefone(numero)
+            if(resultTelefone !== false && typeof(resultTelefone) === 'object') {
+                if(resultTelefone.length > 0) {
+                    dadosTelefone.status = true
+                    dadosTelefone.status_code = 200
+                    dadosTelefone.telefone = resultTelefone[0]
+                    return dadosTelefone
+                } else {
+                    return MESSAGE.ERROR_NOT_FOUND
+                }
+            } else {
+                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+            }
+        }
+    } catch(error) {
+        console.error("Erro buscarTelefonePorNumero:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//Função para buscar telefone pelo tipo
+const buscarTelefonePorTipo = async function(tipo) {
+    try {
+        if(tipo === undefined || tipo === '' || tipo === null || tipo.length > 30) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        } else {
+            let dadosTelefone = {}
+            let resultTelefone = await telefoneDAO.selectByTipoTelefone(tipo)
+            if(resultTelefone !== false && typeof(resultTelefone) === 'object') {
+                if(resultTelefone.length > 0) {
+                    dadosTelefone.status = true
+                    dadosTelefone.status_code = 200
+                    dadosTelefone.telefone = resultTelefone[0]
+                    return dadosTelefone
+                } else {
+                    return MESSAGE.ERROR_NOT_FOUND
+                }
+            } else {
+                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+            }
+        }
+    } catch(error) {
+        console.error("Erro buscarTelefonePorTipo:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirTelefone,
     atualizarTelefone,
     excluirTelefone,
     listarTelefone,
-    buscarTelefone
+    buscarTelefone,
+    buscarTelefonePorNumero,
+    buscarTelefonePorTipo
 }

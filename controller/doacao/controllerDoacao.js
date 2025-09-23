@@ -15,8 +15,9 @@ const doacaoDAO = require('../../model/DAO/doacao')
 const inserirDoacao = async function(doacao, contentType) {
     try {
         if(contentType === 'application/json') {
-            if(doacao.data === undefined || doacao.data === '' || doacao.data === null ||
-               doacao.foto === undefined || doacao.foto === '' || doacao.foto === null || doacao.foto.length > 255) {
+            if(
+                doacao.data === undefined || doacao.data === '' || doacao.data === null ||
+                doacao.foto === undefined || doacao.foto === '' || doacao.foto === null || doacao.foto.length > 255) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS // 400
             } else {
                 //Encaminha os dados para o DAO
@@ -149,10 +150,37 @@ const buscarDoacao = async function(id) {
     }
 }
 
+//Função para listar o histórico de doações de um usuário
+const historicoDoacao = async function(idUsuario) {
+    
+    try {
+        if(idUsuario === undefined || idUsuario === '' || idUsuario === null || isNaN(idUsuario) || idUsuario <= 0) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        } else {
+            let dadosDoacao = {}
+            let resultDoacao = await doacaoDAO.historicoDoacao(parseInt(idUsuario))
+            
+            if(resultDoacao) {
+                dadosDoacao.status = true
+                dadosDoacao.status_code = 200
+                dadosDoacao.items = resultDoacao.length
+                dadosDoacao.doacoes = resultDoacao
+                return dadosDoacao
+            } else {
+                return MESSAGE.ERROR_NOT_FOUND
+            }
+        }
+    } catch(error) {
+        console.error("Erro historicoDoacao:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirDoacao,
     atualizarDoacao,
     excluirDoacao,
     listarDoacao,
-    buscarDoacao
+    buscarDoacao,
+    historicoDoacao
 }

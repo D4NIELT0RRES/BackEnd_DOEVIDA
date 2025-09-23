@@ -15,8 +15,9 @@ const certificadoDAO = require('../../model/DAO/certificado')
 const inserirCertificado = async function(certificado, contentType) {
     try {
         if(contentType === 'application/json') {
-            if(certificado.titulo === undefined || certificado.titulo === '' || certificado.titulo === null || certificado.titulo.length > 50 ||
-               certificado.organizacao === undefined || certificado.organizacao === '' || certificado.organizacao === null || certificado.organizacao.length > 60 ||
+            if(
+                certificado.titulo      === undefined || certificado.titulo       === '' || certificado.titulo       === null || certificado.titulo.length      > 50 ||
+               certificado.organizacao  === undefined || certificado.organizacao  === '' || certificado.organizacao  === null || certificado.organizacao.length > 60 ||
                certificado.data_emissao === undefined || certificado.data_emissao === '' || certificado.data_emissao === null) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS // 400
             } else {
@@ -46,10 +47,11 @@ const inserirCertificado = async function(certificado, contentType) {
 const atualizarCertificado = async function(certificado, id, contentType) {
     try {
         if(contentType === 'application/json') {
-            if(certificado.titulo === undefined || certificado.titulo === '' || certificado.titulo === null || certificado.titulo.length > 50 ||
-               certificado.organizacao === undefined || certificado.organizacao === '' || certificado.organizacao === null || certificado.organizacao.length > 60 ||
+            if(
+                certificado.titulo      === undefined || certificado.titulo       === '' || certificado.titulo       === null || certificado.titulo.length      > 50 ||
+               certificado.organizacao  === undefined || certificado.organizacao  === '' || certificado.organizacao  === null || certificado.organizacao.length > 60 ||
                certificado.data_emissao === undefined || certificado.data_emissao === '' || certificado.data_emissao === null ||
-               id === undefined || id === '' || id === null || isNaN(id) || id <= 0) {
+               id                       === undefined || id                       === '' || id                       === null ||                           isNaN(id) || id <= 0) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS
             } else {
                 let resultCertificado = await buscarCertificado(parseInt(id))

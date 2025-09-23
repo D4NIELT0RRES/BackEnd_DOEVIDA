@@ -145,10 +145,35 @@ const buscarSexo = async function(id) {
     }
 }
 
+//Buscar sexo por nome
+const buscarSexoPorNome = async function(nome) {
+    try {
+        if(nome === undefined || nome === '' || nome === null) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        } else {
+            let dadosSexo = {}
+            let resultSexo = await sexoDAO.selectByNomeSexoUsuario(nome)
+            if(resultSexo) {
+                dadosSexo.status = true
+                dadosSexo.status_code = 200
+                dadosSexo.items = resultSexo.length
+                dadosSexo.sexo = resultSexo
+                return dadosSexo
+            } else {
+                return MESSAGE.ERROR_NOT_FOUND
+            }
+        }
+    } catch(error) {
+        console.error("Erro buscarSexoPorNome:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirSexo,
     atualizarSexo,
     excluirSexo,
     listarSexo,
-    buscarSexo
+    buscarSexo,
+    buscarSexoPorNome
 }

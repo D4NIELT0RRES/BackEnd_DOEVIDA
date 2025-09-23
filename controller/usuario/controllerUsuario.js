@@ -8,6 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const usuarioDAO = require('../../model/DAO/usuario.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
+const { response } = require('express')
 
 //============================== INSERIR ==============================
 const inserirUsuario = async function(usuario, contentType){
@@ -16,19 +17,18 @@ const inserirUsuario = async function(usuario, contentType){
             return MESSAGE.ERROR_CONTENT_TYPE
         }
 
-        if(!usuario.nome || usuario.nome.length > 70 ||
-           !usuario.email || usuario.email.length > 100 ||
-           !usuario.senha || usuario.senha.length > 10 ||
-           !usuario.cpf || usuario.cpf.length > 15 ||
-           !usuario.cep || usuario.cep.length > 10 ||
-           !usuario.data_nascimento ||
-           !usuario.tipo_sanguineo || usuario.tipo_sanguineo.length > 3 ||
-           !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
+        if(
+            !usuario.nome            || usuario.nome.length         > 70  ||
+            !usuario.email           || usuario.email.length        > 100 ||
+            !usuario.senha           || usuario.senha.length        > 10  ||
+            !usuario.cpf             || usuario.cpf.length          > 15  ||
+            !usuario.cep             || usuario.cep.length          > 10  ||
+            !usuario.data_nascimento ||
+            !usuario.tipo_sanguineo  || usuario.tipo_sanguineo.length > 3 ||
+            !usuario.id_sexo         || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
-
-
 
         //Valida se o sexo existe
         const sexoExistente = await controllerSexo.buscarSexo(usuario.id_sexo)
@@ -181,10 +181,75 @@ const buscarUsuario = async function(id){
     }
 }
 
+//============================== BUSCAR POR EMAIL ==============================
+const buscarUsuarioEmail = async function(email){
+    try{
+        if(!email || email.length > 100){
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const resultUsuario = await usuarioDAO.selectByEmailUsuario(email)
+        if(!resultUsuario){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        const usuario = {
+            ...resultUsuario,
+            sexo: resultUsuario.nome_sexo,
+            nome_sexo: undefined
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            usuario
+        }
+
+    }catch(error){
+        console.error("Erro buscarUsuarioEmail:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== BUSCAR POR NOME ==============================
+const buscarUsuarioNome = async function(nome){
+    try{
+        if(!nome || nome.length > 70){
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const resultUsuario = await usuarioDAO.selectByNomeUsuario(nome)
+        if(!resultUsuario){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        const arrayUsuarios = resultUsuario.map(item => {
+            return {
+                ...item,
+                sexo: item.nome_sexo,
+                nome_sexo: undefined
+            }
+        })
+
+        return {
+            status: true,
+            status_code: 200,
+            items: arrayUsuarios.length,
+            usuarios: arrayUsuarios
+        }
+
+    }catch(error){
+        console.error("Erro buscarUsuarioNome:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirUsuario,
     atualizarUsuario,
     excluirUsuario,
     listarUsuario,
-    buscarUsuario
+    buscarUsuario,
+    buscarUsuarioEmail,
+    buscarUsuarioNome
 }

@@ -233,5 +233,6 @@ module.exports = {
     selectAllUsuario,
     selectByIdUsuario,
     selectByEmailUsuario,
-    selectByNomeUsuario
+    selectByNomeUsuario,
+    updateSenha
 }

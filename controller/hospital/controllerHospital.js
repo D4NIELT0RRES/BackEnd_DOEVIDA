@@ -15,18 +15,19 @@ const inserirHospital = async function(hospital, contentType){
             return MESSAGE.ERROR_CONTENT_TYPE
         }
 
-        if(!hospital.nome || hospital.nome.length > 70 ||
-           !hospital.email || hospital.email.length > 100 ||
-           !hospital.senha || hospital.senha.length > 20 ||
-           !hospital.cnpj || hospital.cnpj.length > 20 ||
-           !hospital.crm ||
-           !hospital.cep || hospital.cep.length > 10 ||
-           !hospital.telefone ||
-           !hospital.capacidade_maxima || isNaN(hospital.capacidade_maxima) || hospital.capacidade_maxima <= 0 ||
-           !hospital.convenios ||
-           !hospital.horario_abertura ||
-           !hospital.horario_fechamento ||
-           !hospital.foto
+        if(
+            !hospital.nome  || hospital.nome.length  > 70  ||
+            !hospital.email || hospital.email.length > 100 ||
+            !hospital.senha || hospital.senha.length > 20  ||
+            !hospital.cnpj  || hospital.cnpj.length  > 20  ||
+            !hospital.crm   ||
+            !hospital.cep   || hospital.cep.length   > 10  ||
+            !hospital.telefone           ||
+            !hospital.capacidade_maxima  || isNaN(hospital.capacidade_maxima) || hospital.capacidade_maxima <= 0 ||
+            !hospital.convenios          ||
+            !hospital.horario_abertura   ||
+            !hospital.horario_fechamento ||
+            !hospital.foto
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
@@ -166,10 +167,60 @@ const buscarHospital = async function(id){
     }
 }
 
+//Buscar hospital por email
+const buscarPorEmail = async function(email){
+    try{
+        if(!email || email.length > 100){
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const resultHospital = await hospitalDAO.selectByEmailHospital(email)
+        if(!resultHospital){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            hospital: resultHospital
+        }
+
+    }catch(error){
+        console.error("Erro buscarPorEmail:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//Buscar hospital por CNPJ
+const buscarPorCnpj = async function(cnpj){
+    try{
+        if(!cnpj || cnpj.length > 20){
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const resultHospital = await hospitalDAO.selectByCnpjHospital(cnpj)
+        if(!resultHospital){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            hospital: resultHospital
+        }
+
+    }catch(error){
+        console.error("Erro buscarPorCnpj:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirHospital,
     atualizarHospital,
     excluirHospital,
     listarHospital,
-    buscarHospital
+    buscarHospital,
+    buscarPorEmail,
+    buscarPorCnpj
 }

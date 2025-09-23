@@ -221,7 +221,38 @@ const selectByHospitalAgendamento = async function (id_hospital) {
 //============================== BUSCAR POR DATA ==============================
 const selectByDataAgendamento = async function (data) {
     try {
-        let sql = `SELECT * FROM tbl_agendamento WHERE data = '${data}' ORDER BY hora ASC`
+        let sql = `
+            SELECT 
+                a.id,
+                a.data,
+                a.hora,
+                a.status,
+
+                u.nome AS usuario_nome,
+                u.email AS usuario_email,
+                u.cpf AS usuario_cpf,
+                u.cep AS usuario_cep,
+                u.tipo_sanguineo AS usuario_tipo_sanguineo,
+                u.data_nascimento AS usuario_data_nascimento,
+                u.foto_perfil AS usuario_foto,
+
+                d.data AS doacao_data,
+                d.observacao AS doacao_observacao,
+                d.foto AS doacao_foto,
+
+                h.nome AS hospital_nome,
+                h.email AS hospital_email,
+                h.cnpj AS hospital_cnpj,
+                h.telefone AS hospital_telefone,
+                h.capacidade_maxima AS hospital_capacidade
+
+            FROM tbl_agendamento a
+            LEFT JOIN tbl_usuario u ON a.id_usuario = u.id
+            LEFT JOIN tbl_doacao d ON a.id_doacao = d.id
+            LEFT JOIN tbl_hospital h ON a.id_hospital = h.id
+            WHERE a.data = '${data}'
+            ORDER BY a.hora ASC
+        `
         let result = await prisma.$queryRawUnsafe(sql)
         return result
     } catch (error) {
