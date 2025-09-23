@@ -315,6 +315,12 @@ app.put('/v1/doevida/usuario/:id', cors(), bodyParserJson, async function(reques
     response.status(result.status_code).json(result)
 })
 
+app.delete('/v1/doevida/usuario/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerUsuario.excluirUsuario(id)
+    response.status(result.status_code).json(result)
+})
+
 /*************************************************************************************************
  *                                      INICIANDO SERVIDOR
  *************************************************************************************************/
