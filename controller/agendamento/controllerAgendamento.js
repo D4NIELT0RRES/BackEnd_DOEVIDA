@@ -219,10 +219,45 @@ const buscarAgendamento = async function(id){
     }
 }
 
+//Buscar agendamento por Status
+const buscarAgendamentoPorStatus = async function(status) {
+    try {
+        if (!status) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const statusValidos = ['Agendado', 'Em espera', 'Concluído']
+        if (!statusValidos.includes(status)) {
+            return {
+                status: false,
+                status_code: 400,
+                message: "Status inválido. Use: Agendado, Em espera ou Concluído"
+            }
+        }
+
+        const resultAgendamento = await agendamentoDAO.selectByStatusAgendamento(status)
+        if (!resultAgendamento || resultAgendamento.length === 0) {
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: resultAgendamento.length,
+            agendamentos: resultAgendamento
+        }
+
+    } catch (error) {
+        console.error("Erro buscarAgendamentoPorStatus:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirAgendamento,
     atualizarAgendamento,
     excluirAgendamento,
     listarAgendamento,
-    buscarAgendamento
+    buscarAgendamento,
+    buscarAgendamentoPorStatus
 }

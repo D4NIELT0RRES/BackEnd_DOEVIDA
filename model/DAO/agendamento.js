@@ -114,12 +114,71 @@ const selectByIdAgendamento = async function (id) {
 //============================== BUSCAR POR STATUS ==============================
 const selectByStatusAgendamento = async function (status) {
     try {
-        let sql = `SELECT * FROM tbl_agendamento WHERE status = '${status}'`
-        let result = await prisma.$queryRawUnsafe(sql)
-        return result
+        // Validar se o status é válido
+        const statusValidos = ['Agendado', 'Em espera', 'Concluído'];
+        if (!statusValidos.includes(status)) {
+            return false;
+        }
+
+        let sql = `
+            SELECT 
+                a.*,
+                JSON_OBJECT(
+                    'id', u.id,
+                    'nome', u.nome,
+                    'email', u.email,
+                    'senha', u.senha,
+                    'cpf', u.cpf,
+                    'cep', u.cep,
+                    'tipo_sanguineo', u.tipo_sanguineo,
+                    'data_nascimento', u.data_nascimento,
+                    'foto_perfil', u.foto_perfil,
+                    'data_criacao', u.data_criacao,
+                    'data_atualizacao', u.data_atualizacao
+                ) as usuario,
+                JSON_OBJECT(
+                    'id', d.id,
+                    'data', d.data,
+                    'observacao', d.observacao,
+                    'foto', d.foto
+                ) as doacao,
+                JSON_OBJECT(
+                    'id', h.id,
+                    'nome', h.nome,
+                    'email', h.email,
+                    'senha', h.senha,
+                    'cnpj', h.cnpj,
+                    'crm', h.crm,
+                    'cep', h.cep,
+                    'telefone', h.telefone,
+                    'capacidade_maxima', h.capacidade_maxima,
+                    'convenios', h.convenios,
+                    'horario_abertura', h.horario_abertura,
+                    'horario_fechamento', h.horario_fechamento,
+                    'foto', h.foto,
+                    'complemento', h.complemento
+                ) as hospital
+            FROM tbl_agendamento a
+            LEFT JOIN tbl_usuario u ON a.id_usuario = u.id
+            LEFT JOIN tbl_doacao d ON a.id_doacao = d.id
+            LEFT JOIN tbl_hospital h ON a.id_hospital = h.id
+            WHERE a.status = ?
+            ORDER BY a.data ASC, a.hora ASC`;
+
+        let result = await prisma.$queryRawUnsafe(sql, status);
+
+        // Converter as strings JSON em objetos
+        result = result.map(row => ({
+            ...row,
+            usuario: typeof row.usuario === 'string' ? JSON.parse(row.usuario) : row.usuario,
+            doacao: typeof row.doacao === 'string' ? JSON.parse(row.doacao) : row.doacao,
+            hospital: typeof row.hospital === 'string' ? JSON.parse(row.hospital) : row.hospital
+        }));
+
+        return result;
     } catch (error) {
-        console.log(error)
-        return false
+        console.log(error);
+        return false;
     }
 }
 

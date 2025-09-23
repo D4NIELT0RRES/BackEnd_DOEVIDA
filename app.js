@@ -92,6 +92,15 @@ app.put('/v1/doevida/agendamento/:id', cors(), bodyParserJson, async function(re
     response.status(result.status_code).json(result)
 })
 
+// Endpoint: Buscar agendamentos por status
+app.get('/v1/doevida/agendamento/status/:status', cors(), async function(request, response) {
+    let status = request.params.status
+    let result = await controllerAgendamento.buscarAgendamentoPorStatus(status)
+    
+    response.status(result.status_code)
+    response.json(result)
+})
+
 /*************************************************************************************************
  *                                  ENDPOINTS BANCO DE SANGUE
  *************************************************************************************************/
