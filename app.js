@@ -274,6 +274,12 @@ app.get('/v1/doevida/telefone/:id', cors(), async function(request, response){
     response.status(result.status_code).json(result)
 })
 
+app.delete('/v1/doevida/telefone/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerTelefone.excluirTelefone(id)
+    response.status(result.status_code).json(result)
+})
+
 /*************************************************************************************************
  *                                      ENDPOINTS USUÁRIO
  *************************************************************************************************/
