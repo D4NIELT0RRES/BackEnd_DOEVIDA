@@ -10,6 +10,7 @@ SHOW TABLES;
 -- Ver todas as Triggers
 SHOW TRIGGERS;
 
+
 -- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 -- Tabela de Banco de Sangue
@@ -48,7 +49,6 @@ BEGIN
     SET NEW.sexo = UPPER(NEW.sexo);
 END//
 DELIMITER ;
-
 
 -- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -150,9 +150,14 @@ CREATE TABLE tbl_usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(70) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(10) NOT NULL,
+    senha VARCHAR(255) NOT NULL,
     cpf VARCHAR(15) UNIQUE NOT NULL,
     cep VARCHAR(10) NOT NULL,
+    logradouro VARCHAR(150),
+    bairro VARCHAR(100),
+    localidade VARCHAR(100),
+    uf VARCHAR(2),
+    numero VARCHAR(20),
     tipo_sanguineo VARCHAR(5) NOT NULL,
     data_nascimento DATE NOT NULL,
     foto_perfil VARCHAR(255),

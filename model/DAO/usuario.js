@@ -14,7 +14,9 @@ const prisma = new PrismaClient()
 //============================== INSERIR ==============================
 const insertUsuario = async function (usuario) {
     try {
-        let sql = `
+        // A string SQL agora é um template literal com tag, usando a crase.
+        // Os valores são inseridos diretamente com ${}.
+        let result = await prisma.$executeRaw`
             INSERT INTO tbl_usuario (
                 nome,
                 email,
@@ -22,27 +24,35 @@ const insertUsuario = async function (usuario) {
                 cpf,
                 cep,
                 data_nascimento,
-                foto_perfil,
                 tipo_sanguineo,
-                id_sexo
+                logradouro,
+                bairro,
+                localidade,
+                uf,
+                numero,
+                id_sexo,
+                foto_perfil 
             ) VALUES (
-                '${usuario.nome}',
-                '${usuario.email}',
-                '${usuario.senha}',
-                '${usuario.cpf}',
-                '${usuario.cep}',
-                '${usuario.data_nascimento}',
-                '${usuario.foto_perfil || ''}',
-                '${usuario.tipo_sanguineo}',
-                ${usuario.id_sexo || null}
+                ${usuario.nome},
+                ${usuario.email},
+                ${usuario.senha},
+                ${usuario.cpf},
+                ${usuario.cep},
+                ${usuario.data_nascimento},
+                ${usuario.tipo_sanguineo},
+                ${usuario.logradouro || null},
+                ${usuario.bairro || null},
+                ${usuario.localidade || null},
+                ${usuario.uf || null},
+                ${usuario.numero || null},
+                ${usuario.id_sexo},
+                ${usuario.foto_perfil || null}
             );
-        `
-
-        let result = await prisma.$executeRawUnsafe(sql)
+        `;
 
         if (result) {
-            // Buscar o último usuário inserido com base no e-mail
-            let sqlSelect = `
+            // A query de SELECT também deve seguir a mesma sintaxe.
+            let criado = await prisma.$queryRaw`
                 SELECT 
                     u.id,
                     u.nome,
@@ -55,41 +65,53 @@ const insertUsuario = async function (usuario) {
                     u.foto_perfil,
                     u.data_criacao,
                     u.data_atualizacao,
+                    u.logradouro,
+                    u.bairro,
+                    u.localidade,
+                    u.uf,
+                    u.numero,
                     s.sexo as nome_sexo
                 FROM tbl_usuario u
                 LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-                WHERE u.email = '${usuario.email}'
+                WHERE u.email = ${usuario.email}
                 ORDER BY u.id DESC
                 LIMIT 1
-            `
-            let criado = await prisma.$queryRawUnsafe(sqlSelect)
-            return criado.length > 0 ? criado[0] : false
+            `;
+            
+            return criado.length > 0 ? criado[0] : false;
         } else {
-            return false
+            return false;
         }
     } catch (error) {
-        console.log(error)
-        return false
+        // Use console.error para destacar o erro
+        console.error("Erro na DAO:", error);
+        return false;
     }
-}
+};
 
 //============================== ATUALIZAR ==============================
 const updateUsuario = async function (usuario) {
     try {
         let sql = `
+            
             UPDATE tbl_usuario 
-            SET nome             = '${usuario.nome}',
-                email            = '${usuario.email}',
-                senha            = '${usuario.senha}',
-                cpf              = '${usuario.cpf}',
-                cep              = '${usuario.cep}',
-                data_nascimento  = '${usuario.data_nascimento}',
-                foto_perfil      = '${usuario.foto_perfil || ''}',
-                tipo_sanguineo   = '${usuario.tipo_sanguineo}',
-                id_sexo          = ${usuario.id_sexo || null}
+            SET 
+                nome            = '${usuario.nome}',
+                email           = '${usuario.email}',
+                senha           = '${usuario.senha}',
+                cpf             = '${usuario.cpf}',
+                cep             = '${usuario.cep}',
+                logradouro      = '${usuario.logradouro}',
+                bairro          = '${usuario.bairro}',
+                localidade      = '${usuario.localidade}',
+                uf              = '${usuario.uf}',
+                numero          = '${usuario.numero}',
+                data_nascimento = '${usuario.data_nascimento}',
+                foto_perfil     = '${usuario.foto_perfil}',
+                tipo_sanguineo  = '${usuario.tipo_sanguineo}',
+                id_sexo         = ${usuario.id_sexo || null}
             WHERE id = ${usuario.id};
         `
-
         let result = await prisma.$executeRawUnsafe(sql)
         return result ? true : false
     } catch (error) {
@@ -226,6 +248,8 @@ const selectByNomeUsuario = async function (nome) {
     }
 }
 
+
+
 module.exports = {
     insertUsuario,
     updateUsuario,
@@ -233,6 +257,5 @@ module.exports = {
     selectAllUsuario,
     selectByIdUsuario,
     selectByEmailUsuario,
-    selectByNomeUsuario,
-    updateSenha
+    selectByNomeUsuario
 }

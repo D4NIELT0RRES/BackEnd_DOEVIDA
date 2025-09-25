@@ -8,6 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const usuarioDAO = require('../../model/DAO/usuario.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
+const viaCep = require('../../viaCep.js')
 const { response } = require('express')
 
 //============================== INSERIR ==============================
@@ -29,6 +30,22 @@ const inserirUsuario = async function(usuario, contentType){
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
+
+        const dadosEndereco = await viaCep.buscarCep(usuario.cep)
+
+        if(dadosEndereco.erro){
+            return { status: false, status_code: 400, message: dadosEndereco.message }
+        } else {
+            usuario.logradouro = dadosEndereco.logradouro
+            usuario.bairro = dadosEndereco.bairro
+            usuario.localidade = dadosEndereco.localidade
+            usuario.uf = dadosEndereco.uf
+        }
+
+        if(usuario.numero && usuario.numero.length > 10){
+            return { status: false, status_code: 400, message: "Número do endereço inválido" }
+        }
+
 
         //Valida se o sexo existe
         const sexoExistente = await controllerSexo.buscarSexo(usuario.id_sexo)
