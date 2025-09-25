@@ -325,6 +325,7 @@ app.delete('/v1/doevida/sexo-usuario/:id', cors(), async function(request, respo
     response.status(result.status_code).json(result)
 })
 
+
 /*************************************************************************************************
  *                                      ENDPOINTS TELEFONE
  *************************************************************************************************/
@@ -395,6 +396,15 @@ app.put('/v1/doevida/usuario/:id', cors(), bodyParserJson, async function(reques
     let result      = await controllerUsuario.atualizarUsuario(dadosBody, id, contentType)
     response.status(result.status_code).json(result)
 })
+
+
+app.post('/v1/doevida/login', cors(), bodyParserJson, async function (request, response) {
+    let contentType = request.headers['content-type']
+    let dadosBody = request.body
+    let result = await controllerUsuario.loginUsuario(dadosBody,contentType)
+    response.status(result.status_code).json(result)
+})
+
 
 /*************************************************************************************************
  *                                      INICIANDO SERVIDOR

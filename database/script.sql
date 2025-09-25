@@ -173,6 +173,25 @@ CREATE TABLE tbl_usuario (
     REFERENCES tbl_sexo(id)
 );
 
+
+select * from tbl_usuario where email = email and senha = senha;
+SELECT 
+                u.id,
+                u.nome,
+                u.email,
+                u.senha,
+                u.cpf,
+                u.cep,
+                u.tipo_sanguineo,
+                u.data_nascimento,
+                u.foto_perfil,
+                u.data_criacao,
+                u.data_atualizacao,
+                s.sexo as nome_sexo
+            FROM tbl_usuario u
+            LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
+            WHERE u.email = 'carlos.mendes@exemplo.com'
+
 -- Trigger para padronização de dados
 DELIMITER //
 CREATE TRIGGER before_usuario_insert

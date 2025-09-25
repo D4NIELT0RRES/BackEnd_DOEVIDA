@@ -10,6 +10,7 @@ const usuarioDAO = require('../../model/DAO/usuario.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
 const viaCep = require('../../viaCep.js')
 const { response } = require('express')
+const { addListener } = require('../../app.js')
 
 //============================== INSERIR ==============================
 const inserirUsuario = async function(usuario, contentType){
@@ -262,6 +263,42 @@ const buscarUsuarioNome = async function(nome){
     }
 }
 
+//============================== LOGIN DO USUÁRIO ==============================
+const loginUsuario = async function (dadosLogin, contentType) {
+
+    try {
+        if(contentType === 'application/json'){
+
+            if(
+                !dadosLogin.email || dadosLogin.email.trim() === '' ||
+                !dadosLogin.senha || dadosLogin.senha.trim() === ''
+            ){
+                return MESSAGE.ERROR_INVALID_ADDRESS_FIELD;
+            }
+
+            const resultLogin = await usuarioDAO.loginUsuario(dadosLogin);
+
+            console.log(resultLogin);
+            
+            if(resultLogin && typeof resultLogin === 'object' && resultLogin.length > 0){
+                return{
+                    status: true,
+                    status_code: 200,
+                    usuario: resultLogin
+                }
+            }else{
+                return MESSAGE.ERROR_NOT_FOUND
+            }
+        }else{
+            return MESSAGE.ERROR_CONTENT_TYPE
+        }
+    } catch (error) {
+        console.log("Erro no login do usuário", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+    
+}
+
 module.exports = {
     inserirUsuario,
     atualizarUsuario,
@@ -269,5 +306,6 @@ module.exports = {
     listarUsuario,
     buscarUsuario,
     buscarUsuarioEmail,
-    buscarUsuarioNome
+    buscarUsuarioNome,
+    loginUsuario
 }

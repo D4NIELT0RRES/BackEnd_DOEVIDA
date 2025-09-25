@@ -245,6 +245,23 @@ const selectByNomeUsuario = async function (nome) {
     }
 }
 
+const loginUsuario = async function (dadosLogin) {
+    
+    try {
+        let sql = `select * from tbl_usuario where email = "${dadosLogin.email}" and senha = "${dadosLogin.senha}";`
+
+        let result = await prisma.$queryRawUnsafe(sql)
+
+        if(result){
+            return result
+        }else{
+            return false
+        }
+    }catch(error){
+        return false   
+    }
+
+}
 
 
 module.exports = {
@@ -254,5 +271,6 @@ module.exports = {
     selectAllUsuario,
     selectByIdUsuario,
     selectByEmailUsuario,
-    selectByNomeUsuario
+    selectByNomeUsuario,
+    loginUsuario
 }
