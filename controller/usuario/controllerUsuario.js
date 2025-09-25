@@ -18,15 +18,16 @@ const inserirUsuario = async function(usuario, contentType){
             return MESSAGE.ERROR_CONTENT_TYPE
         }
 
-        if(
-            !usuario.nome            || usuario.nome.length         > 70  ||
-            !usuario.email           || usuario.email.length        > 100 ||
-            !usuario.senha           || usuario.senha.length        > 10  ||
-            !usuario.cpf             || usuario.cpf.length          > 15  ||
-            !usuario.cep             || usuario.cep.length          > 10  ||
+        if (
+            !usuario.nome || usuario.nome.length > 70 ||
+            !usuario.email || usuario.email.length > 100 ||
+            !usuario.senha || usuario.senha.length < 8 || usuario.senha.length > 255 || // senha mínima de 8
+            !usuario.cpf || usuario.cpf.length > 15 ||
+            !usuario.cep || usuario.cep.length > 10 ||
             !usuario.data_nascimento ||
-            !usuario.tipo_sanguineo  || usuario.tipo_sanguineo.length > 3 ||
-            !usuario.id_sexo         || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
+            !usuario.tipo_sanguineo || usuario.tipo_sanguineo.length > 3 ||
+            (usuario.foto_perfil && usuario.foto_perfil.length > 255) || // agora é opcional
+            !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }

@@ -14,8 +14,6 @@ const prisma = new PrismaClient()
 //============================== INSERIR ==============================
 const insertUsuario = async function (usuario) {
     try {
-        // A string SQL agora é um template literal com tag, usando a crase.
-        // Os valores são inseridos diretamente com ${}.
         let result = await prisma.$executeRaw`
             INSERT INTO tbl_usuario (
                 nome,
@@ -51,7 +49,6 @@ const insertUsuario = async function (usuario) {
         `;
 
         if (result) {
-            // A query de SELECT também deve seguir a mesma sintaxe.
             let criado = await prisma.$queryRaw`
                 SELECT 
                     u.id,
@@ -77,9 +74,9 @@ const insertUsuario = async function (usuario) {
                 ORDER BY u.id DESC
                 LIMIT 1
             `;
-            
-            return criado.length > 0 ? criado[0] : false;
-        } else {
+
+            return criado[0]
+            } else {
             return false;
         }
     } catch (error) {

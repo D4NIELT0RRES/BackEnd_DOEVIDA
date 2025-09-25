@@ -10,7 +10,7 @@ SHOW TABLES;
 -- Ver todas as Triggers
 SHOW TRIGGERS;
 
-
+drop database db_doevida_tcc;
 -- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 -- Tabela de Banco de Sangue
