@@ -49,7 +49,7 @@ const updateCertificado = async function (certificado) {
                    WHERE id = ${certificado.id}`
 
         let result = await prisma.$executeRawUnsafe(sql)
-        return result ? true : false
+        return result > 0
     } catch (error) {
         console.log(error)
         return false
@@ -61,7 +61,7 @@ const deleteCertificado = async function (id) {
     try {
         let sql = `DELETE FROM tbl_certificado WHERE id = ${id}`
         let result = await prisma.$executeRawUnsafe(sql)
-        return result ? true : false
+        return result > 0
     } catch (error) {
         console.log(error)
         return false

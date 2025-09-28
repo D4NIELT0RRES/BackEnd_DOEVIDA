@@ -17,8 +17,9 @@ const inserirCertificado = async function(certificado, contentType) {
         if(contentType === 'application/json') {
             if(
                 certificado.titulo      === undefined || certificado.titulo       === '' || certificado.titulo       === null || certificado.titulo.length      > 50 ||
-               certificado.organizacao  === undefined || certificado.organizacao  === '' || certificado.organizacao  === null || certificado.organizacao.length > 60 ||
-               certificado.data_emissao === undefined || certificado.data_emissao === '' || certificado.data_emissao === null) {
+                certificado.organizacao === undefined || certificado.organizacao  === '' || certificado.organizacao  === null || certificado.organizacao.length > 60 ||
+                certificado.data_emissao=== undefined || certificado.data_emissao === '' || certificado.data_emissao === null
+            ) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS // 400
             } else {
                 //Encaminha os dados para o DAO
@@ -49,14 +50,18 @@ const atualizarCertificado = async function(certificado, id, contentType) {
         if(contentType === 'application/json') {
             if(
                 certificado.titulo      === undefined || certificado.titulo       === '' || certificado.titulo       === null || certificado.titulo.length      > 50 ||
-               certificado.organizacao  === undefined || certificado.organizacao  === '' || certificado.organizacao  === null || certificado.organizacao.length > 60 ||
-               certificado.data_emissao === undefined || certificado.data_emissao === '' || certificado.data_emissao === null ||
-               id                       === undefined || id                       === '' || id                       === null ||                           isNaN(id) || id <= 0) {
+                certificado.organizacao === undefined || certificado.organizacao  === '' || certificado.organizacao  === null || certificado.organizacao.length > 60 ||
+                certificado.data_emissao=== undefined || certificado.data_emissao === '' || certificado.data_emissao === null ||
+                id                       === undefined || id                       === '' || id                       === null || isNaN(id) || id <= 0
+            ) {
                 return MESSAGE.ERROR_REQUIRED_FIELDS
             } else {
                 let resultCertificado = await buscarCertificado(parseInt(id))
                 if(resultCertificado.status_code === 200) {
-                    let updated = await certificadoDAO.updateCertificado(certificado, parseInt(id))
+                    // Garante que o id seja enviado junto para o DAO
+                    certificado.id = parseInt(id)
+
+                    let updated = await certificadoDAO.updateCertificado(certificado)
                     if(updated) {
                         return {
                             status_code: 200,
@@ -109,7 +114,7 @@ const listarCertificado = async function() {
         let dadosCertificado = {}
         let resultCertificado = await certificadoDAO.selectAllCertificado()
 
-        if(resultCertificado !== false && typeof(resultCertificado) === 'object') {
+        if(resultCertificado && typeof(resultCertificado) === 'object') {
             if(resultCertificado.length > 0) {
                 dadosCertificado.status = true
                 dadosCertificado.status_code = 200
@@ -136,17 +141,13 @@ const buscarCertificado = async function(id) {
         } else {
             let dadosCertificado = {}
             let resultCertificado = await certificadoDAO.selectByIdCertificado(parseInt(id))
-            if(resultCertificado !== false && typeof(resultCertificado) === 'object') {
-                if(resultCertificado.length > 0) {
-                    dadosCertificado.status = true
-                    dadosCertificado.status_code = 200
-                    dadosCertificado.certificado = resultCertificado[0]
-                    return dadosCertificado
-                } else {
-                    return MESSAGE.ERROR_NOT_FOUND
-                }
+            if(resultCertificado && typeof(resultCertificado) === 'object') {
+                dadosCertificado.status = true
+                dadosCertificado.status_code = 200
+                dadosCertificado.certificado = resultCertificado
+                return dadosCertificado
             } else {
-                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+                return MESSAGE.ERROR_NOT_FOUND
             }
         }
     } catch(error) {

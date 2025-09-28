@@ -4,80 +4,68 @@ CREATE DATABASE db_doevida_tcc;
 -- Usa o BD
 USE db_doevida_tcc;
 
--- Ver todas as Tabelas
-SHOW TABLES;
 
--- Ver todas as Triggers
-SHOW TRIGGERS;
-
-drop database db_doevida_tcc;
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de Banco de Sangue
+-- =========================
+-- TABELA: Banco de Sangue
+-- =========================
 CREATE TABLE tbl_banco_sangue (
     id INT AUTO_INCREMENT PRIMARY KEY,
     tipo_sanguineo VARCHAR(5) NOT NULL,
     quantidade VARCHAR(5) NOT NULL
 );
 
--- Trigger para padronização de dados
 DELIMITER //
 CREATE TRIGGER before_bancosangue_insert
 BEFORE INSERT ON tbl_banco_sangue
 FOR EACH ROW
 BEGIN
-    -- Converte o título para maiúsculas
     SET NEW.tipo_sanguineo = UPPER(NEW.tipo_sanguineo);
 END//
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de sexo
+-- =========================
+-- TABELA: Sexo
+-- =========================
 CREATE TABLE tbl_sexo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sexo VARCHAR(15) NOT NULL
 );
 
--- Trigger para padronização de dados
 DELIMITER //
 CREATE TRIGGER before_sexo_insert
 BEFORE INSERT ON tbl_sexo
 FOR EACH ROW
 BEGIN
-    -- Converte o sexo para maiúsculas
     SET NEW.sexo = UPPER(NEW.sexo);
 END//
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de doacao
+-- =========================
+-- TABELA: Doação
+-- =========================
 CREATE TABLE tbl_doacao (
     id INT AUTO_INCREMENT PRIMARY KEY,
     data DATE NOT NULL,
-    observacao TEXT,
-    foto VARCHAR(255) NOT NULL
+    observacao TEXT NULL,
+    foto VARCHAR(255) NULL
 );
 
--- Trigger para Data de Doação
 DELIMITER //
 CREATE TRIGGER before_doacao_data_format
 BEFORE INSERT ON tbl_doacao
 FOR EACH ROW
 BEGIN
-    -- Converte formatos alternativos para YYYY-MM-DD
     IF NEW.data REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
         SET NEW.data = STR_TO_DATE(NEW.data, '%d/%m/%Y');
     ELSEIF NEW.data REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
         SET NEW.data = STR_TO_DATE(NEW.data, '%d-%m-%Y');
     END IF;
-    -- Validação: data de doação não pode ser futura
+
     IF NEW.data > CURDATE() THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Data de doação não pode ser futura';
     END IF;
-    -- Validação: data de doação não pode ser anterior a 2000
+
     IF NEW.data < '2000-01-01' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Data de doação muito antiga';
@@ -85,10 +73,9 @@ BEGIN
 END //
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-
--- Tabela de telefone
+-- =========================
+-- TABELA: Telefone
+-- =========================
 CREATE TABLE tbl_telefone (
     id INT AUTO_INCREMENT PRIMARY KEY,
     tipo VARCHAR(30) NOT NULL,
@@ -100,22 +87,18 @@ CREATE TRIGGER before_telefone_format
 BEFORE INSERT ON tbl_telefone
 FOR EACH ROW
 BEGIN
-    -- Remove caracteres não numéricos
     SET NEW.numero = REPLACE(REPLACE(REPLACE(REPLACE(NEW.numero, '(', ''), ')', ''), '-', ''), ' ', '');
-    -- Formata para o padrão (XX) XXXXX-XXXX
     IF LENGTH(NEW.numero) = 11 THEN
-        SET NEW.numero = CONCAT(
-            '(', SUBSTRING(NEW.numero, 1, 2), ') ',
-            SUBSTRING(NEW.numero, 3, 5), '-',
-            SUBSTRING(NEW.numero, 8, 4)
-        );
+        SET NEW.numero = CONCAT('(', SUBSTRING(NEW.numero, 1, 2), ') ',
+                                 SUBSTRING(NEW.numero, 3, 5), '-',
+                                 SUBSTRING(NEW.numero, 8, 4));
     END IF;
 END //
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de certificado
+-- =========================
+-- TABELA: Certificado
+-- =========================
 CREATE TABLE tbl_certificado (
     id INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(50) NOT NULL,
@@ -123,19 +106,17 @@ CREATE TABLE tbl_certificado (
     data_emissao DATE NOT NULL
 );
 
--- Trigger para Data de Emissão de Certificado
 DELIMITER //
 CREATE TRIGGER before_certificado_data_format
 BEFORE INSERT ON tbl_certificado
 FOR EACH ROW
 BEGIN
-    -- Converte formatos alternativos para YYYY-MM-DD
     IF NEW.data_emissao REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
         SET NEW.data_emissao = STR_TO_DATE(NEW.data_emissao, '%d/%m/%Y');
     ELSEIF NEW.data_emissao REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
         SET NEW.data_emissao = STR_TO_DATE(NEW.data_emissao, '%d-%m-%Y');
     END IF;
-    -- Validação: data de emissão não pode ser futura
+
     IF NEW.data_emissao > CURDATE() THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Data de emissão não pode ser futura';
@@ -143,9 +124,9 @@ BEGIN
 END //
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de usuários
+-- =========================
+-- TABELA: Usuário
+-- =========================
 CREATE TABLE tbl_usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(70) NOT NULL,
@@ -164,97 +145,58 @@ CREATE TABLE tbl_usuario (
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     id_banco_sangue INT,
-    CONSTRAINT FK_usuario_banco_sangue
-    FOREIGN KEY (id_banco_sangue)
-    REFERENCES tbl_banco_sangue(id),
     id_sexo INT,
-    CONSTRAINT FK_usuario_sexo
-    FOREIGN KEY (id_sexo)
-    REFERENCES tbl_sexo(id)
+    FOREIGN KEY (id_banco_sangue) REFERENCES tbl_banco_sangue(id),
+    FOREIGN KEY (id_sexo) REFERENCES tbl_sexo(id)
 );
 
-
-select * from tbl_usuario where email = email and senha = senha;
-SELECT 
-                u.id,
-                u.nome,
-                u.email,
-                u.senha,
-                u.cpf,
-                u.cep,
-                u.tipo_sanguineo,
-                u.data_nascimento,
-                u.foto_perfil,
-                u.data_criacao,
-                u.data_atualizacao,
-                s.sexo as nome_sexo
-            FROM tbl_usuario u
-            LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-            WHERE u.email = 'carlos.mendes@exemplo.com'
-
--- Trigger para padronização de dados
 DELIMITER //
 CREATE TRIGGER before_usuario_insert
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    -- Converte e-mail para minúsculas
     SET NEW.email = LOWER(NEW.email);
 END //
 DELIMITER ;
 
--- Trigger para Formatação Automática de CPF
 DELIMITER //
 CREATE TRIGGER before_usuario_cpf_format
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    -- Remove caracteres não numéricos
     SET NEW.cpf = REPLACE(REPLACE(REPLACE(NEW.cpf, '.', ''), '-', ''), ' ', '');
-    -- Formata para o padrão XXX.XXX.XXX-XX
     IF LENGTH(NEW.cpf) = 11 THEN
-        SET NEW.cpf = CONCAT(
-            SUBSTRING(NEW.cpf, 1, 3), '.',
-            SUBSTRING(NEW.cpf, 4, 3), '.',
-            SUBSTRING(NEW.cpf, 7, 3), '-',
-            SUBSTRING(NEW.cpf, 10, 2)
-        );
+        SET NEW.cpf = CONCAT(SUBSTRING(NEW.cpf, 1, 3), '.',
+                             SUBSTRING(NEW.cpf, 4, 3), '.',
+                             SUBSTRING(NEW.cpf, 7, 3), '-',
+                             SUBSTRING(NEW.cpf, 10, 2));
     END IF;
 END //
 DELIMITER ;
 
--- Trigger para Formatação Automática de CEP
 DELIMITER //
 CREATE TRIGGER before_usuario_cep_format
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    -- Remove caracteres não numéricos
     SET NEW.cep = REPLACE(REPLACE(NEW.cep, '-', ''), ' ', '');
-    -- Formata para o padrão XXXXX-XXX
     IF LENGTH(NEW.cep) = 8 THEN
-        SET NEW.cep = CONCAT(
-            SUBSTRING(NEW.cep, 1, 5), '-',
-            SUBSTRING(NEW.cep, 6, 3)
-        );
+        SET NEW.cep = CONCAT(SUBSTRING(NEW.cep, 1, 5), '-', SUBSTRING(NEW.cep, 6, 3));
     END IF;
 END //
 DELIMITER ;
 
--- Trigger para Padronização de Data de Nascimento
 DELIMITER //
 CREATE TRIGGER before_usuario_data_format
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    -- Garante que a data esteja no formato YYYY-MM-DD
-    -- Converte formatos como DD/MM/YYYY para YYYY-MM-DD
     IF NEW.data_nascimento REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
         SET NEW.data_nascimento = STR_TO_DATE(NEW.data_nascimento, '%d/%m/%Y');
     ELSEIF NEW.data_nascimento REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
         SET NEW.data_nascimento = STR_TO_DATE(NEW.data_nascimento, '%d-%m-%Y');
     END IF;
-    -- Validação adicional: não permite datas futuras
+
     IF NEW.data_nascimento > CURDATE() THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Data de nascimento não pode ser futura';
@@ -262,70 +204,9 @@ BEGIN
 END //
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de agendamento
-CREATE TABLE tbl_agendamento (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    status VARCHAR(50) NOT NULL,
-    data DATE NOT NULL,
-    hora TIME NOT NULL,
-    id_usuario INT,
-    CONSTRAINT FK_agendamento_usuario
-        FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id),
-    id_doacao INT,
-    CONSTRAINT FK_agendamento_doacao
-        FOREIGN KEY (id_doacao) REFERENCES tbl_doacao(id),
-    id_hospital INT,
-    CONSTRAINT FK_agendamento_hospital
-        FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
-);
-
--- Trigger para Padronização de Data de Agendamento
-DELIMITER //
-CREATE TRIGGER before_agendamento_data_format
-BEFORE INSERT ON tbl_agendamento
-FOR EACH ROW
-BEGIN
-    -- Converte formatos alternativos para YYYY-MM-DD
-    IF NEW.data REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-        SET NEW.data = STR_TO_DATE(NEW.data, '%d/%m/%Y');
-    ELSEIF NEW.data REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
-        SET NEW.data = STR_TO_DATE(NEW.data, '%d-%m-%Y');
-    END IF;
-    -- Validação: não permite agendamentos no passado
-    IF NEW.data < CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Não é possível agendar para datas passadas';
-    END IF;
-END //
-DELIMITER ;
-
--- Trigger para Padronização de Hora de Agendamento
-DELIMITER //
-CREATE TRIGGER before_agendamento_hora_format
-BEFORE INSERT ON tbl_agendamento
-FOR EACH ROW
-BEGIN
-    -- Converte formatos de hora variados para HH:MM:SS
-    IF NEW.hora REGEXP '^[0-9]{2}:[0-9]{2}$' THEN
-        SET NEW.hora = TIME(STR_TO_DATE(NEW.hora, '%H:%i'));
-    ELSEIF NEW.hora REGEXP '^[0-9]{2}[0-9]{2}$' THEN
-        SET NEW.hora = TIME(STR_TO_DATE(NEW.hora, '%H%i'));
-    ELSEIF NEW.hora REGEXP '^[0-9]{1,2}[hH]' THEN
-        SET NEW.hora = TIME(STR_TO_DATE(REPLACE(REPLACE(NEW.hora, 'h', ':'), 'H', ':'), '%H:%i'));
-    END IF;
-    -- Validação: horário entre 7h e 19h
-    IF TIME(NEW.hora) < '07:00:00' OR TIME(NEW.hora) > '19:00:00' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Horário de agendamento deve ser entre 07:00 e 19:00';
-    END IF;
-END //
-DELIMITER ;
-
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
--- Tabela de hospitais
+-- =========================
+-- TABELA: Hospitais
+-- =========================
 CREATE TABLE tbl_hospital (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(70) NOT NULL,
@@ -343,96 +224,121 @@ CREATE TABLE tbl_hospital (
     complemento VARCHAR(255)
 );
 
--- Trigger para padronização de dados
 DELIMITER //
 CREATE TRIGGER before_hospital_email_format
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
-    -- Converte email para minúsculas
     SET NEW.email = LOWER(NEW.email);
 END //
 DELIMITER ;
 
--- Trigger para Formatação do CNPJ
 DELIMITER //
 CREATE TRIGGER before_hospital_cnpj_format
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
-    -- Remove caracteres não numéricos
     SET NEW.cnpj = REPLACE(REPLACE(REPLACE(REPLACE(NEW.cnpj, '.', ''), '/', ''), '-', ''), ' ', '');
-    -- Formata para o padrão XX.XXX.XXX/XXXX-XX
     IF LENGTH(NEW.cnpj) = 14 THEN
-        SET NEW.cnpj = CONCAT(
-            SUBSTRING(NEW.cnpj, 1, 2), '.',
-            SUBSTRING(NEW.cnpj, 3, 3), '.',
-            SUBSTRING(NEW.cnpj, 6, 3), '/',
-            SUBSTRING(NEW.cnpj, 9, 4), '-',
-            SUBSTRING(NEW.cnpj, 13, 2)
-        );
+        SET NEW.cnpj = CONCAT(SUBSTRING(NEW.cnpj, 1, 2), '.',
+                              SUBSTRING(NEW.cnpj, 3, 3), '.',
+                              SUBSTRING(NEW.cnpj, 6, 3), '/',
+                              SUBSTRING(NEW.cnpj, 9, 4), '-',
+                              SUBSTRING(NEW.cnpj, 13, 2));
     END IF;
 END //
 DELIMITER ;
 
--- Trigger para Formatação do CEP
 DELIMITER //
 CREATE TRIGGER before_hospital_cep_format
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
-    -- Remove caracteres não numéricos
     SET NEW.cep = REPLACE(REPLACE(NEW.cep, '-', ''), ' ', '');
-    -- Formata para o padrão XXXXX-XXX
     IF LENGTH(NEW.cep) = 8 THEN
-        SET NEW.cep = CONCAT(
-            SUBSTRING(NEW.cep, 1, 5), '-',
-            SUBSTRING(NEW.cep, 6, 3)
-        );
+        SET NEW.cep = CONCAT(SUBSTRING(NEW.cep, 1, 5), '-', SUBSTRING(NEW.cep, 6, 3));
     END IF;
 END //
 DELIMITER ;
 
--- Trigger para Formatação do Telefone
 DELIMITER //
 CREATE TRIGGER before_hospital_telefone_format
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
-    -- Remove caracteres não numéricos da coluna "telefone"
     SET NEW.telefone = REPLACE(REPLACE(REPLACE(REPLACE(NEW.telefone, '(', ''), ')', ''), '-', ''), ' ', '');
-    -- Formata para o padrão (XX) XXXXX-XXXX
     IF LENGTH(NEW.telefone) = 11 THEN
-        SET NEW.telefone = CONCAT(
-            '(', SUBSTRING(NEW.telefone, 1, 2), ') ',
-            SUBSTRING(NEW.telefone, 3, 5), '-',
-            SUBSTRING(NEW.telefone, 8, 4)
-        );
+        SET NEW.telefone = CONCAT('(', SUBSTRING(NEW.telefone, 1, 2), ') ',
+                                  SUBSTRING(NEW.telefone, 3, 5), '-',
+                                  SUBSTRING(NEW.telefone, 8, 4));
     END IF;
 END //
 DELIMITER ;
 
--- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+-- =========================
+-- TABELA: Agendamento
+-- =========================
+CREATE TABLE tbl_agendamento (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    status ENUM('Agendado', 'Em espera', 'Concluído') NOT NULL DEFAULT 'Em espera',
+    data DATE NOT NULL,
+    hora TIME NOT NULL,
+    id_usuario INT,
+    id_doacao INT,
+    id_hospital INT,
+    FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id),
+    FOREIGN KEY (id_doacao) REFERENCES tbl_doacao(id),
+    FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
+);
 
--- Primeiro, vamos garantir que a coluna status seja corrigida
-ALTER TABLE tbl_agendamento 
-DROP COLUMN status;
+DELIMITER //
+CREATE TRIGGER before_agendamento_data_format
+BEFORE INSERT ON tbl_agendamento
+FOR EACH ROW
+BEGIN
+    IF NEW.data REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
+        SET NEW.data = STR_TO_DATE(NEW.data, '%d/%m/%Y');
+    ELSEIF NEW.data REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
+        SET NEW.data = STR_TO_DATE(NEW.data, '%d-%m-%Y');
+    END IF;
 
-ALTER TABLE tbl_agendamento
-ADD COLUMN status ENUM('Agendado', 'Em espera', 'Concluído') NOT NULL DEFAULT 'Em espera';
+    IF NEW.data < CURDATE() THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Não é possível agendar para datas passadas';
+    END IF;
+END //
+DELIMITER ;
 
--- Agora as alterações do hospital
-ALTER TABLE tbl_hospital 
-MODIFY COLUMN capacidade_maxima INT NOT NULL DEFAULT 10,
-MODIFY COLUMN horario_abertura TIME NOT NULL DEFAULT '08:00:00',
-MODIFY COLUMN horario_fechamento TIME NOT NULL DEFAULT '18:00:00';
+DELIMITER //
+CREATE TRIGGER before_agendamento_hora_format
+BEFORE INSERT ON tbl_agendamento
+FOR EACH ROW
+BEGIN
+    IF NEW.hora REGEXP '^[0-9]{2}:[0-9]{2}$' THEN
+        SET NEW.hora = TIME(STR_TO_DATE(NEW.hora, '%H:%i'));
+    ELSEIF NEW.hora REGEXP '^[0-9]{2}[0-9]{2}$' THEN
+        SET NEW.hora = TIME(STR_TO_DATE(NEW.hora, '%H%i'));
+    ELSEIF NEW.hora REGEXP '^[0-9]{1,2}[hH]' THEN
+        SET NEW.hora = TIME(STR_TO_DATE(REPLACE(REPLACE(NEW.hora, 'h', ':'), 'H', ':'), '%H:%i'));
+    END IF;
 
--- Por fim, as alterações da doação
-ALTER TABLE tbl_doacao 
-MODIFY COLUMN observacao TEXT NULL,
-MODIFY COLUMN foto VARCHAR(255) NULL;
+    IF TIME(NEW.hora) < '07:00:00' OR TIME(NEW.hora) > '19:00:00' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Horário de agendamento deve ser entre 07:00 e 19:00';
+    END IF;
+END //
+DELIMITER ;
 
--- Criar índices para otimização
-CREATE INDEX IF NOT EXISTS idx_agendamento_data ON tbl_agendamento(data);
-CREATE INDEX IF NOT EXISTS idx_agendamento_status ON tbl_agendamento(status);
-CREATE INDEX IF NOT EXISTS idx_agendamento_hospital ON tbl_agendamento(id_hospital);
+-- =========================
+-- ÍNDICES IMPORTANTES
+-- =========================
+CREATE INDEX idx_usuario_email ON tbl_usuario(email);
+CREATE INDEX idx_usuario_cpf ON tbl_usuario(cpf);
+CREATE INDEX idx_hospital_email ON tbl_hospital(email);
+CREATE INDEX idx_hospital_cnpj ON tbl_hospital(cnpj);
+
+CREATE INDEX idx_agendamento_data ON tbl_agendamento(data);
+CREATE INDEX idx_agendamento_status ON tbl_agendamento(status);
+CREATE INDEX idx_agendamento_hospital ON tbl_agendamento(id_hospital);
+
+CREATE INDEX idx_doacao_data ON tbl_doacao(data);

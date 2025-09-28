@@ -2,71 +2,62 @@
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD da TABELA DOAÇÃO.
  * DATA: 18/09/2025
  * AUTOR: Daniel Torres
- * Versão: 1.0
+ * Versão: 1.1 (Correções de consistência)
  ***************************************************************************************/
 
-//Import do arquivo de configuração para a mensagem e status code
 const MESSAGE = require('../../modulo/config.js')
-
-//Import do DAO para realizar um CRUD no banco de dados
 const doacaoDAO = require('../../model/DAO/doacao')
 
-//Função para inserir uma nova doação
+// Inserir nova doação
 const inserirDoacao = async function(doacao, contentType) {
     try {
         if(contentType === 'application/json') {
-            if(
-                doacao.data === undefined || doacao.data === '' || doacao.data === null ||
-                doacao.foto === undefined || doacao.foto === '' || doacao.foto === null || doacao.foto.length > 255) {
-                return MESSAGE.ERROR_REQUIRED_FIELDS // 400
+            if(!doacao.data || !doacao.foto || doacao.foto.length > 255) {
+                return MESSAGE.ERROR_REQUIRED_FIELDS
+            } 
+            
+            let resultDoacao = await doacaoDAO.insertDoacao(doacao)
+            if(resultDoacao) {
+                return {
+                    status_code: 201,
+                    message: "Doação registrada com sucesso",
+                    doacao: resultDoacao
+                }
             } else {
-                //Encaminha os dados para o DAO
-                let resultDoacao = await doacaoDAO.insertDoacao(doacao)
+                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+            }
+        } else {
+            return MESSAGE.ERROR_CONTENT_TYPE
+        }
+    } catch(error) {
+        console.error("Erro inserirDoacao:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
 
-                if(resultDoacao) {
+// Atualizar doação
+const atualizarDoacao = async function(doacao, id, contentType) {
+    try {
+        if(contentType === 'application/json') {
+            if(!doacao.data || !doacao.foto || doacao.foto.length > 255 || !id || isNaN(id) || id <= 0) {
+                return MESSAGE.ERROR_REQUIRED_FIELDS
+            } 
+            
+            let resultDoacao = await buscarDoacao(parseInt(id))
+            if(resultDoacao.status_code === 200) {
+                let updated = await doacaoDAO.updateDoacao(doacao, parseInt(id))
+                if(updated) {
+                    let doacaoAtualizada = {...doacao, id: parseInt(id)}
                     return {
-                        status_code: 201,
-                        message: "Doação registrada com sucesso",
-                        doacao: resultDoacao
+                        status_code: 200,
+                        message: "Doação atualizada com sucesso",
+                        doacao: doacaoAtualizada
                     }
                 } else {
                     return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
                 }
-            }
-        } else {
-            return MESSAGE.ERROR_CONTENT_TYPE // 415
-        }
-    } catch(error) {
-        console.error("Erro inserirDoacao:", error)
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
-    }
-}
-
-//Função para atualizar uma doação
-const atualizarDoacao = async function(doacao, id, contentType) {
-    try {
-        if(contentType === 'application/json') {
-            if(doacao.data === undefined || doacao.data === '' || doacao.data === null ||
-               doacao.foto === undefined || doacao.foto === '' || doacao.foto === null || doacao.foto.length > 255 ||
-               id === undefined || id === '' || id === null || isNaN(id) || id <= 0) {
-                return MESSAGE.ERROR_REQUIRED_FIELDS
             } else {
-                let resultDoacao = await buscarDoacao(parseInt(id))
-                if(resultDoacao.status_code === 200) {
-                    let updated = await doacaoDAO.updateDoacao(doacao, parseInt(id))
-                    if(updated) {
-                        let doacaoAtualizada = {...doacao, id: parseInt(id)}
-                        return {
-                            status_code: 200,
-                            message: "Doação atualizada com sucesso",
-                            doacao: doacaoAtualizada
-                        }
-                    } else {
-                        return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
-                    }
-                } else {
-                    return resultDoacao
-                }
+                return resultDoacao
             }
         } else {
             return MESSAGE.ERROR_CONTENT_TYPE
@@ -77,23 +68,19 @@ const atualizarDoacao = async function(doacao, id, contentType) {
     }
 }
 
-//Função para deletar uma doação
+// Deletar doação
 const excluirDoacao = async function(id) {
     try {
-        if(id === undefined || id === '' || id === null || isNaN(id) || id <= 0) {
+        if(!id || isNaN(id) || id <= 0) {
             return MESSAGE.ERROR_REQUIRED_FIELDS
+        } 
+        
+        let resultDoacao = await buscarDoacao(parseInt(id))
+        if(resultDoacao.status_code === 200) {
+            let deleted = await doacaoDAO.deleteDoacao(parseInt(id))
+            return deleted ? MESSAGE.SUCCESS_DELETE_ITEM : MESSAGE.ERROR_INTERNAL_SERVER_MODEL
         } else {
-            let resultDoacao = await buscarDoacao(parseInt(id))
-            if(resultDoacao.status_code === 200) {
-                let deleted = await doacaoDAO.deleteDoacao(parseInt(id))
-                if(deleted) {
-                    return MESSAGE.SUCCESS_DELETE_ITEM
-                } else {
-                    return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
-                }
-            } else {
-                return resultDoacao
-            }
+            return resultDoacao
         }
     } catch(error) {
         console.error("Erro excluirDoacao:", error)
@@ -101,24 +88,19 @@ const excluirDoacao = async function(id) {
     }
 }
 
-//Função para listar todas as doações
+// Listar todas as doações
 const listarDoacao = async function() {
     try {
-        let dadosDoacao = {}
         let resultDoacao = await doacaoDAO.selectAllDoacao()
-
-        if(resultDoacao !== false && typeof(resultDoacao) === 'object') {
-            if(resultDoacao.length > 0) {
-                dadosDoacao.status = true
-                dadosDoacao.status_code = 200
-                dadosDoacao.items = resultDoacao.length
-                dadosDoacao.doacao = resultDoacao
-                return dadosDoacao
-            } else {
-                return MESSAGE.ERROR_NOT_FOUND
+        if(resultDoacao) {
+            return {
+                status: true,
+                status_code: 200,
+                items: resultDoacao.length,
+                doacao: resultDoacao
             }
         } else {
-            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+            return MESSAGE.ERROR_NOT_FOUND
         }
     } catch(error) {
         console.error("Erro listarDoacao:", error)
@@ -126,23 +108,22 @@ const listarDoacao = async function() {
     }
 }
 
-//Função para buscar doação pelo ID
+// Buscar doação pelo ID
 const buscarDoacao = async function(id) {
     try {
-        if(id === undefined || id === '' || id === null || isNaN(id) || id <= 0) {
+        if(!id || isNaN(id) || id <= 0) {
             return MESSAGE.ERROR_REQUIRED_FIELDS
-        } else {
-            let dadosDoacao = {}
-            let resultDoacao = await doacaoDAO.selectByIdDoacao(parseInt(id))
-            
-            if(resultDoacao) {
-                dadosDoacao.status = true
-                dadosDoacao.status_code = 200
-                dadosDoacao.doacao = resultDoacao
-                return dadosDoacao
-            } else {
-                return MESSAGE.ERROR_NOT_FOUND
+        }
+        
+        let resultDoacao = await doacaoDAO.selectByIdDoacao(parseInt(id))
+        if(resultDoacao) {
+            return {
+                status: true,
+                status_code: 200,
+                doacao: resultDoacao
             }
+        } else {
+            return MESSAGE.ERROR_NOT_FOUND
         }
     } catch(error) {
         console.error("Erro buscarDoacao:", error)
@@ -150,25 +131,23 @@ const buscarDoacao = async function(id) {
     }
 }
 
-//Função para listar o histórico de doações de um usuário
+// Histórico de doações do usuário
 const historicoDoacao = async function(idUsuario) {
-    
     try {
-        if(idUsuario === undefined || idUsuario === '' || idUsuario === null || isNaN(idUsuario) || idUsuario <= 0) {
+        if(!idUsuario || isNaN(idUsuario) || idUsuario <= 0) {
             return MESSAGE.ERROR_REQUIRED_FIELDS
-        } else {
-            let dadosDoacao = {}
-            let resultDoacao = await doacaoDAO.historicoDoacao(parseInt(idUsuario))
-            
-            if(resultDoacao) {
-                dadosDoacao.status = true
-                dadosDoacao.status_code = 200
-                dadosDoacao.items = resultDoacao.length
-                dadosDoacao.doacoes = resultDoacao
-                return dadosDoacao
-            } else {
-                return MESSAGE.ERROR_NOT_FOUND
+        }
+        
+        let resultDoacao = await doacaoDAO.historicoDoacao(parseInt(idUsuario))
+        if(resultDoacao) {
+            return {
+                status: true,
+                status_code: 200,
+                items: resultDoacao.length,
+                doacoes: resultDoacao
             }
+        } else {
+            return MESSAGE.ERROR_NOT_FOUND
         }
     } catch(error) {
         console.error("Erro historicoDoacao:", error)

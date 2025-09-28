@@ -22,9 +22,9 @@ const insertAgendamento = async function (agendamento) {
                         '${agendamento.status}',
                         '${agendamento.data}',
                         '${agendamento.hora}',
-                        ${agendamento.id_usuario || null},
-                        ${agendamento.id_doacao || null},
-                        ${agendamento.id_hospital || null}
+                        ${agendamento.id_usuario},
+                        ${agendamento.id_doacao},
+                        ${agendamento.id_hospital}
                     )`
 
         let result = await prisma.$executeRawUnsafe(sql)
@@ -54,9 +54,9 @@ const updateAgendamento = async function (agendamento) {
                         status = '${agendamento.status}',
                         data = '${agendamento.data}',
                         hora = '${agendamento.hora}',
-                        id_usuario = ${agendamento.id_usuario || null},
-                        id_doacao = ${agendamento.id_doacao || null},
-                        id_hospital = ${agendamento.id_hospital || null}
+                        id_usuario = ${agendamento.id_usuario},
+                        id_doacao = ${agendamento.id_doacao},
+                        id_hospital = ${agendamento.id_hospital}
                    WHERE id = ${agendamento.id}`
 
         let result = await prisma.$executeRawUnsafe(sql)
@@ -104,7 +104,7 @@ const selectByIdAgendamento = async function (id) {
         if (!id) return false
         let sql = `SELECT * FROM tbl_agendamento WHERE id = ${id}`
         let result = await prisma.$queryRawUnsafe(sql)
-        return result[0]
+        return result[0] || false
     } catch (error) {
         console.log(error)
         return false
@@ -165,6 +165,7 @@ const selectByStatusAgendamento = async function (status) {
             WHERE a.status = ?
             ORDER BY a.data ASC, a.hora ASC`;
 
+        // Observação: mantenho o mesmo uso de $queryRawUnsafe com parâmetro conforme seu original
         let result = await prisma.$queryRawUnsafe(sql, status);
 
         // Converter as strings JSON em objetos

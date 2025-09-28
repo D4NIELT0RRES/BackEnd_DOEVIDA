@@ -1,16 +1,14 @@
 /***************************************************************************************
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD do USUÁRIO.
- * DATA: 22/09/2025
+ * DATA: 28/09/2025
  * AUTOR: Daniel Torres
- * Versão: 1.2
+ * Versão: 1.3
  ***************************************************************************************/
 
 const MESSAGE = require('../../modulo/config.js')
 const usuarioDAO = require('../../model/DAO/usuario.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
 const viaCep = require('../../viaCep.js')
-const { response } = require('express')
-const { addListener } = require('../../app.js')
 
 //============================== INSERIR ==============================
 const inserirUsuario = async function(usuario, contentType){
@@ -22,19 +20,18 @@ const inserirUsuario = async function(usuario, contentType){
         if (
             !usuario.nome || usuario.nome.length > 70 ||
             !usuario.email || usuario.email.length > 100 ||
-            !usuario.senha || usuario.senha.length < 8 || usuario.senha.length > 255 || // senha mínima de 8
-            !usuario.cpf || usuario.cpf.length > 15 ||
+            !usuario.senha_hash || usuario.senha_hash.length < 8 || usuario.senha_hash.length > 255 ||
+            (usuario.cpf && usuario.cpf.length > 15) ||
             !usuario.cep || usuario.cep.length > 10 ||
             !usuario.data_nascimento ||
-            !usuario.tipo_sanguineo || usuario.tipo_sanguineo.length > 3 ||
-            (usuario.foto_perfil && usuario.foto_perfil.length > 255) || // agora é opcional
+            !usuario.id_tipo_sanguineo || isNaN(usuario.id_tipo_sanguineo) ||
+            (usuario.foto_perfil && usuario.foto_perfil.length > 255) ||
             !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
         const dadosEndereco = await viaCep.buscarCep(usuario.cep)
-
         if(dadosEndereco.erro){
             return { status: false, status_code: 400, message: dadosEndereco.message }
         } else {
@@ -48,8 +45,6 @@ const inserirUsuario = async function(usuario, contentType){
             return { status: false, status_code: 400, message: "Número do endereço inválido" }
         }
 
-
-        //Valida se o sexo existe
         const sexoExistente = await controllerSexo.buscarSexo(usuario.id_sexo)
         if(!sexoExistente || sexoExistente.status_code !== 200){
             return { status_code: 404, message: "Sexo não encontrado" }
@@ -81,11 +76,11 @@ const atualizarUsuario = async function(usuario, id, contentType){
 
         if(!usuario.nome || usuario.nome.length > 70 ||
            !usuario.email || usuario.email.length > 100 ||
-           !usuario.senha || usuario.senha.length > 10 ||
-           !usuario.cpf || usuario.cpf.length > 15 ||
+           !usuario.senha_hash || usuario.senha_hash.length > 255 ||
+           (usuario.cpf && usuario.cpf.length > 15) ||
            !usuario.cep || usuario.cep.length > 10 ||
            !usuario.data_nascimento ||
-           !usuario.tipo_sanguineo || usuario.tipo_sanguineo.length > 5 ||
+           !usuario.id_tipo_sanguineo || isNaN(usuario.id_tipo_sanguineo) ||
            !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0 ||
            !id || isNaN(id) || id <= 0
         ){
@@ -153,7 +148,9 @@ const listarUsuario = async function(){
             return {
                 ...item,
                 sexo: item.nome_sexo,
-                nome_sexo: undefined
+                tipo_sanguineo: item.tipo_sanguineo_nome,
+                nome_sexo: undefined,
+                tipo_sanguineo_nome: undefined
             }
         })
 
@@ -185,7 +182,9 @@ const buscarUsuario = async function(id){
         const usuario = {
             ...resultUsuario,
             sexo: resultUsuario.nome_sexo,
-            nome_sexo: undefined
+            tipo_sanguineo: resultUsuario.tipo_sanguineo_nome,
+            nome_sexo: undefined,
+            tipo_sanguineo_nome: undefined
         }
 
         return {
@@ -203,7 +202,7 @@ const buscarUsuario = async function(id){
 //============================== BUSCAR POR EMAIL ==============================
 const buscarUsuarioEmail = async function(email){
     try{
-        if(!email || email.length > 100){
+        if(!email || email.length > 120){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
@@ -215,7 +214,9 @@ const buscarUsuarioEmail = async function(email){
         const usuario = {
             ...resultUsuario,
             sexo: resultUsuario.nome_sexo,
-            nome_sexo: undefined
+            tipo_sanguineo: resultUsuario.tipo_sanguineo_nome,
+            nome_sexo: undefined,
+            tipo_sanguineo_nome: undefined
         }
 
         return {
@@ -233,7 +234,7 @@ const buscarUsuarioEmail = async function(email){
 //============================== BUSCAR POR NOME ==============================
 const buscarUsuarioNome = async function(nome){
     try{
-        if(!nome || nome.length > 70){
+        if(!nome || nome.length > 100){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
@@ -246,7 +247,9 @@ const buscarUsuarioNome = async function(nome){
             return {
                 ...item,
                 sexo: item.nome_sexo,
-                nome_sexo: undefined
+                tipo_sanguineo: item.tipo_sanguineo_nome,
+                nome_sexo: undefined,
+                tipo_sanguineo_nome: undefined
             }
         })
 
@@ -263,22 +266,19 @@ const buscarUsuarioNome = async function(nome){
     }
 }
 
-//============================== LOGIN DO USUÁRIO ==============================
+//============================== LOGIN ==============================
 const loginUsuario = async function (dadosLogin, contentType) {
-
     try {
         if(contentType === 'application/json'){
 
             if(
                 !dadosLogin.email || dadosLogin.email.trim() === '' ||
-                !dadosLogin.senha || dadosLogin.senha.trim() === ''
+                !dadosLogin.senha_hash || dadosLogin.senha_hash.trim() === ''
             ){
                 return MESSAGE.ERROR_INVALID_ADDRESS_FIELD;
             }
 
             const resultLogin = await usuarioDAO.loginUsuario(dadosLogin);
-
-            console.log(resultLogin);
             
             if(resultLogin && typeof resultLogin === 'object' && resultLogin.length > 0){
                 return{
@@ -296,7 +296,6 @@ const loginUsuario = async function (dadosLogin, contentType) {
         console.log("Erro no login do usuário", error)
         return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
-    
 }
 
 module.exports = {
