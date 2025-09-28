@@ -2,7 +2,7 @@
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD do AGENDAMENTO.
  * DATA: 18/09/2025
  * AUTOR: Daniel Torres
- * Versão: 1.0
+ * Versão: 1.1
  ***************************************************************************************/
 
 const MESSAGE = require('../../modulo/config.js')
@@ -11,6 +11,7 @@ const controllerUsuario = require('../usuario/controllerUsuario.js')
 const controllerDoacao = require('../doacao/controllerDoacao.js')
 const controllerHospital = require('../hospital/controllerHospital.js')
 
+//============================== INSERIR ==============================
 const inserirAgendamento = async function(agendamento, contentType){
     try{
         if(contentType !== 'application/json'){
@@ -42,6 +43,16 @@ const inserirAgendamento = async function(agendamento, contentType){
             return { status_code: 404, message: "Hospital não encontrado" }
         }
 
+        // Verificar disponibilidade de vagas
+        const disponibilidade = await agendamentoDAO.verificarDisponibilidade(
+            agendamento.data,
+            agendamento.hora,
+            agendamento.id_hospital
+        )
+        if(!disponibilidade.disponivel){
+            return { status_code: 409, message: "Horário indisponível no hospital", ...disponibilidade }
+        }
+
         const resultAgendamento = await agendamentoDAO.insertAgendamento(agendamento)
         if(resultAgendamento){
             return {
@@ -59,6 +70,7 @@ const inserirAgendamento = async function(agendamento, contentType){
     }
 }
 
+//============================== ATUALIZAR ==============================
 const atualizarAgendamento = async function(agendamento, id, contentType){
     try{
         if(contentType !== 'application/json'){
@@ -81,10 +93,14 @@ const atualizarAgendamento = async function(agendamento, id, contentType){
             return MESSAGE.ERROR_NOT_FOUND
         }
 
-        agendamento.id = parseInt(id) // garante que o DAO saiba qual ID atualizar
+        agendamento.id = parseInt(id)
         const result = await agendamentoDAO.updateAgendamento(agendamento)
         if(result){
-            return MESSAGE.SUCCESS_UPDATE_ITEM
+            return {
+                status_code: 200,
+                message: "Agendamento atualizado com sucesso",
+                agendamento: result
+            }
         } else {
             return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
         }
@@ -95,6 +111,7 @@ const atualizarAgendamento = async function(agendamento, id, contentType){
     }
 }
 
+//============================== DELETAR ==============================
 const excluirAgendamento = async function(id){
     try{
         if(!id || isNaN(id) || id <= 0){
@@ -119,6 +136,7 @@ const excluirAgendamento = async function(id){
     }
 }
 
+//============================== LISTAR TODOS ==============================
 const listarAgendamento = async function(){
     try{
         const resultAgendamento = await agendamentoDAO.selectAllAgendamento()
@@ -139,6 +157,7 @@ const listarAgendamento = async function(){
     }
 }
 
+//============================== BUSCAR POR ID ==============================
 const buscarAgendamento = async function(id){
     try{
         if(!id || isNaN(id) || id <= 0){
@@ -162,7 +181,138 @@ const buscarAgendamento = async function(id){
     }
 }
 
-// Demais buscas (status, usuario, doacao, hospital, data) permanecem iguais...
+//============================== BUSCAR POR STATUS ==============================
+const buscarAgendamentoPorStatus = async function(status){
+    try{
+        if(!status) return MESSAGE.ERROR_REQUIRED_FIELDS
+
+        const result = await agendamentoDAO.selectByStatusAgendamento(status)
+        if(!result || result.length === 0){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: result.length,
+            agendamentos: result
+        }
+    }catch(error){
+        console.error("Erro buscarAgendamentoPorStatus:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== BUSCAR POR USUÁRIO ==============================
+const buscarAgendamentoPorUsuario = async function(id_usuario){
+    try{
+        if(!id_usuario || isNaN(id_usuario)) return MESSAGE.ERROR_REQUIRED_FIELDS
+
+        const result = await agendamentoDAO.selectByUsuarioAgendamento(parseInt(id_usuario))
+        if(!result || result.length === 0){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: result.length,
+            agendamentos: result
+        }
+    }catch(error){
+        console.error("Erro buscarAgendamentoPorUsuario:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== BUSCAR POR DOAÇÃO ==============================
+const buscarAgendamentoPorDoacao = async function(id_doacao){
+    try{
+        if(!id_doacao || isNaN(id_doacao)) return MESSAGE.ERROR_REQUIRED_FIELDS
+
+        const result = await agendamentoDAO.selectByDoacaoAgendamento(parseInt(id_doacao))
+        if(!result || result.length === 0){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: result.length,
+            agendamentos: result
+        }
+    }catch(error){
+        console.error("Erro buscarAgendamentoPorDoacao:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== BUSCAR POR HOSPITAL ==============================
+const buscarAgendamentoPorHospital = async function(id_hospital){
+    try{
+        if(!id_hospital || isNaN(id_hospital)) return MESSAGE.ERROR_REQUIRED_FIELDS
+
+        const result = await agendamentoDAO.selectByHospitalAgendamento(parseInt(id_hospital))
+        if(!result || result.length === 0){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: result.length,
+            agendamentos: result
+        }
+    }catch(error){
+        console.error("Erro buscarAgendamentoPorHospital:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== BUSCAR POR DATA ==============================
+const buscarAgendamentoPorData = async function(data){
+    try{
+        if(!data) return MESSAGE.ERROR_REQUIRED_FIELDS
+
+        const result = await agendamentoDAO.selectByDataAgendamento(data)
+        if(!result || result.length === 0){
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: result.length,
+            agendamentos: result
+        }
+    }catch(error){
+        console.error("Erro buscarAgendamentoPorData:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== VERIFICAR DISPONIBILIDADE ==============================
+const verificarDisponibilidade = async function(data, hora, id_hospital){
+    try{
+        if(!data || !hora || !id_hospital || isNaN(id_hospital)){
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const disponibilidade = await agendamentoDAO.verificarDisponibilidade(data, hora, parseInt(id_hospital))
+        if(disponibilidade === false){
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            ...disponibilidade
+        }
+    }catch(error){
+        console.error("Erro verificarDisponibilidade:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
 
 module.exports = {
     inserirAgendamento,
@@ -174,5 +324,6 @@ module.exports = {
     buscarAgendamentoPorUsuario,
     buscarAgendamentoPorDoacao,
     buscarAgendamentoPorHospital,
-    buscarAgendamentoPorData
+    buscarAgendamentoPorData,
+    verificarDisponibilidade
 }
