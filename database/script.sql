@@ -1,9 +1,10 @@
--- Cria o Banco de Dados
+-- ==========================================
+-- BANCO DE DADOS - DOEVIDA (com Seeds)
+-- ==========================================
+
+DROP DATABASE IF EXISTS db_doevida_tcc;
 CREATE DATABASE db_doevida_tcc;
-
--- Usa o BD
 USE db_doevida_tcc;
-
 
 -- =========================
 -- TABELA: Banco de Sangue
@@ -23,6 +24,17 @@ BEGIN
 END//
 DELIMITER ;
 
+-- Seed tipos sanguíneos
+INSERT INTO tbl_banco_sangue (tipo_sanguineo, quantidade) VALUES
+('A+', '0'),
+('A-', '0'),
+('B+', '0'),
+('B-', '0'),
+('AB+', '0'),
+('AB-', '0'),
+('O+', '0'),
+('O-', '0');
+
 -- =========================
 -- TABELA: Sexo
 -- =========================
@@ -40,89 +52,12 @@ BEGIN
 END//
 DELIMITER ;
 
--- =========================
--- TABELA: Doação
--- =========================
-CREATE TABLE tbl_doacao (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    data DATE NOT NULL,
-    observacao TEXT NULL,
-    foto VARCHAR(255) NULL
-);
-
-DELIMITER //
-CREATE TRIGGER before_doacao_data_format
-BEFORE INSERT ON tbl_doacao
-FOR EACH ROW
-BEGIN
-    IF NEW.data REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-        SET NEW.data = STR_TO_DATE(NEW.data, '%d/%m/%Y');
-    ELSEIF NEW.data REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
-        SET NEW.data = STR_TO_DATE(NEW.data, '%d-%m-%Y');
-    END IF;
-
-    IF NEW.data > CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Data de doação não pode ser futura';
-    END IF;
-
-    IF NEW.data < '2000-01-01' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Data de doação muito antiga';
-    END IF;
-END //
-DELIMITER ;
-
--- =========================
--- TABELA: Telefone
--- =========================
-CREATE TABLE tbl_telefone (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tipo VARCHAR(30) NOT NULL,
-    numero VARCHAR(15) NOT NULL
-);
-
-DELIMITER //
-CREATE TRIGGER before_telefone_format
-BEFORE INSERT ON tbl_telefone
-FOR EACH ROW
-BEGIN
-    SET NEW.numero = REPLACE(REPLACE(REPLACE(REPLACE(NEW.numero, '(', ''), ')', ''), '-', ''), ' ', '');
-    IF LENGTH(NEW.numero) = 11 THEN
-        SET NEW.numero = CONCAT('(', SUBSTRING(NEW.numero, 1, 2), ') ',
-                                 SUBSTRING(NEW.numero, 3, 5), '-',
-                                 SUBSTRING(NEW.numero, 8, 4));
-    END IF;
-END //
-DELIMITER ;
-
--- =========================
--- TABELA: Certificado
--- =========================
-CREATE TABLE tbl_certificado (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(50) NOT NULL,
-    organizacao VARCHAR(60) NOT NULL,
-    data_emissao DATE NOT NULL
-);
-
-DELIMITER //
-CREATE TRIGGER before_certificado_data_format
-BEFORE INSERT ON tbl_certificado
-FOR EACH ROW
-BEGIN
-    IF NEW.data_emissao REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-        SET NEW.data_emissao = STR_TO_DATE(NEW.data_emissao, '%d/%m/%Y');
-    ELSEIF NEW.data_emissao REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
-        SET NEW.data_emissao = STR_TO_DATE(NEW.data_emissao, '%d-%m-%Y');
-    END IF;
-
-    IF NEW.data_emissao > CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Data de emissão não pode ser futura';
-    END IF;
-END //
-DELIMITER ;
+-- Seed sexos
+INSERT INTO tbl_sexo (sexo) VALUES
+('MASCULINO'),
+('FEMININO'),
+('OUTRO'),
+('PREFIRO NÃO INFORMAR');
 
 -- =========================
 -- TABELA: Usuário
@@ -131,77 +66,84 @@ CREATE TABLE tbl_usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(70) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    cpf VARCHAR(15) UNIQUE NOT NULL,
-    cep VARCHAR(10) NOT NULL,
-    logradouro VARCHAR(150),
-    bairro VARCHAR(100),
-    localidade VARCHAR(100),
-    uf VARCHAR(2),
-    numero VARCHAR(20),
-    tipo_sanguineo VARCHAR(5) NOT NULL,
-    data_nascimento DATE NOT NULL,
-    foto_perfil VARCHAR(255),
+    senha_hash VARCHAR(255) NOT NULL,
+
+    -- Dados opcionais
+    cpf VARCHAR(15) UNIQUE NULL,
+    cep VARCHAR(10) NULL,
+    logradouro VARCHAR(150) NULL,
+    bairro VARCHAR(100) NULL,
+    localidade VARCHAR(100) NULL,
+    uf VARCHAR(2) NULL,
+    numero VARCHAR(20) NULL,
+    data_nascimento DATE NULL,
+    foto_perfil VARCHAR(255) NULL,
+
+    -- Relacionamentos opcionais
+    id_banco_sangue INT NULL,
+    id_sexo INT NULL,
+
+    -- Controle
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    id_banco_sangue INT,
-    id_sexo INT,
+
     FOREIGN KEY (id_banco_sangue) REFERENCES tbl_banco_sangue(id),
     FOREIGN KEY (id_sexo) REFERENCES tbl_sexo(id)
 );
 
+-- Triggers Usuário
 DELIMITER //
-CREATE TRIGGER before_usuario_insert
+CREATE TRIGGER before_usuario_email
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
     SET NEW.email = LOWER(NEW.email);
-END //
+END//
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER before_usuario_cpf_format
+CREATE TRIGGER before_usuario_cpf
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    SET NEW.cpf = REPLACE(REPLACE(REPLACE(NEW.cpf, '.', ''), '-', ''), ' ', '');
-    IF LENGTH(NEW.cpf) = 11 THEN
-        SET NEW.cpf = CONCAT(SUBSTRING(NEW.cpf, 1, 3), '.',
-                             SUBSTRING(NEW.cpf, 4, 3), '.',
-                             SUBSTRING(NEW.cpf, 7, 3), '-',
-                             SUBSTRING(NEW.cpf, 10, 2));
+    IF NEW.cpf IS NOT NULL THEN
+        SET NEW.cpf = REPLACE(REPLACE(REPLACE(NEW.cpf, '.', ''), '-', ''), ' ', '');
+        IF LENGTH(NEW.cpf) = 11 THEN
+            SET NEW.cpf = CONCAT(SUBSTRING(NEW.cpf, 1, 3), '.',
+                                 SUBSTRING(NEW.cpf, 4, 3), '.',
+                                 SUBSTRING(NEW.cpf, 7, 3), '-',
+                                 SUBSTRING(NEW.cpf, 10, 2));
+        END IF;
     END IF;
-END //
+END//
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER before_usuario_cep_format
+CREATE TRIGGER before_usuario_cep
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    SET NEW.cep = REPLACE(REPLACE(NEW.cep, '-', ''), ' ', '');
-    IF LENGTH(NEW.cep) = 8 THEN
-        SET NEW.cep = CONCAT(SUBSTRING(NEW.cep, 1, 5), '-', SUBSTRING(NEW.cep, 6, 3));
+    IF NEW.cep IS NOT NULL THEN
+        SET NEW.cep = REPLACE(REPLACE(NEW.cep, '-', ''), ' ', '');
+        IF LENGTH(NEW.cep) = 8 THEN
+            SET NEW.cep = CONCAT(SUBSTRING(NEW.cep, 1, 5), '-', SUBSTRING(NEW.cep, 6, 3));
+        END IF;
     END IF;
-END //
+END//
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER before_usuario_data_format
+CREATE TRIGGER before_usuario_nascimento
 BEFORE INSERT ON tbl_usuario
 FOR EACH ROW
 BEGIN
-    IF NEW.data_nascimento REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-        SET NEW.data_nascimento = STR_TO_DATE(NEW.data_nascimento, '%d/%m/%Y');
-    ELSEIF NEW.data_nascimento REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
-        SET NEW.data_nascimento = STR_TO_DATE(NEW.data_nascimento, '%d-%m-%Y');
+    IF NEW.data_nascimento IS NOT NULL THEN
+        IF NEW.data_nascimento > CURDATE() THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Data de nascimento não pode ser futura';
+        END IF;
     END IF;
-
-    IF NEW.data_nascimento > CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Data de nascimento não pode ser futura';
-    END IF;
-END //
+END//
 DELIMITER ;
 
 -- =========================
@@ -211,7 +153,7 @@ CREATE TABLE tbl_hospital (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(70) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(20) NOT NULL,
+    senha VARCHAR(255) NOT NULL,
     cnpj VARCHAR(20) UNIQUE NOT NULL,
     crm VARCHAR(255) NOT NULL,
     cep VARCHAR(10) NOT NULL,
@@ -221,20 +163,21 @@ CREATE TABLE tbl_hospital (
     horario_abertura TIME NOT NULL DEFAULT '08:00:00',
     horario_fechamento TIME NOT NULL DEFAULT '18:00:00',
     foto VARCHAR(255) NOT NULL,
-    complemento VARCHAR(255)
+    complemento VARCHAR(255) NULL
 );
 
+-- Triggers Hospital
 DELIMITER //
-CREATE TRIGGER before_hospital_email_format
+CREATE TRIGGER before_hospital_email
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
     SET NEW.email = LOWER(NEW.email);
-END //
+END//
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER before_hospital_cnpj_format
+CREATE TRIGGER before_hospital_cnpj
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
@@ -246,11 +189,11 @@ BEGIN
                               SUBSTRING(NEW.cnpj, 9, 4), '-',
                               SUBSTRING(NEW.cnpj, 13, 2));
     END IF;
-END //
+END//
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER before_hospital_cep_format
+CREATE TRIGGER before_hospital_cep
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
@@ -258,11 +201,11 @@ BEGIN
     IF LENGTH(NEW.cep) = 8 THEN
         SET NEW.cep = CONCAT(SUBSTRING(NEW.cep, 1, 5), '-', SUBSTRING(NEW.cep, 6, 3));
     END IF;
-END //
+END//
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER before_hospital_telefone_format
+CREATE TRIGGER before_hospital_telefone
 BEFORE INSERT ON tbl_hospital
 FOR EACH ROW
 BEGIN
@@ -272,8 +215,18 @@ BEGIN
                                   SUBSTRING(NEW.telefone, 3, 5), '-',
                                   SUBSTRING(NEW.telefone, 8, 4));
     END IF;
-END //
+END//
 DELIMITER ;
+
+-- =========================
+-- TABELA: Doação
+-- =========================
+CREATE TABLE tbl_doacao (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    data DATE NOT NULL,
+    observacao TEXT NULL,
+    foto VARCHAR(255) NULL
+);
 
 -- =========================
 -- TABELA: Agendamento
@@ -291,54 +244,39 @@ CREATE TABLE tbl_agendamento (
     FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
 );
 
-DELIMITER //
-CREATE TRIGGER before_agendamento_data_format
-BEFORE INSERT ON tbl_agendamento
-FOR EACH ROW
-BEGIN
-    IF NEW.data REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-        SET NEW.data = STR_TO_DATE(NEW.data, '%d/%m/%Y');
-    ELSEIF NEW.data REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{4}$' THEN
-        SET NEW.data = STR_TO_DATE(NEW.data, '%d-%m-%Y');
-    END IF;
-
-    IF NEW.data < CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Não é possível agendar para datas passadas';
-    END IF;
-END //
-DELIMITER ;
+-- =========================
+-- TABELA: Telefone
+-- =========================
+CREATE TABLE tbl_telefone (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(30) NOT NULL,
+    numero VARCHAR(15) NOT NULL,
+    id_usuario INT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id)
+);
 
 DELIMITER //
-CREATE TRIGGER before_agendamento_hora_format
-BEFORE INSERT ON tbl_agendamento
+CREATE TRIGGER before_telefone_format
+BEFORE INSERT ON tbl_telefone
 FOR EACH ROW
 BEGIN
-    IF NEW.hora REGEXP '^[0-9]{2}:[0-9]{2}$' THEN
-        SET NEW.hora = TIME(STR_TO_DATE(NEW.hora, '%H:%i'));
-    ELSEIF NEW.hora REGEXP '^[0-9]{2}[0-9]{2}$' THEN
-        SET NEW.hora = TIME(STR_TO_DATE(NEW.hora, '%H%i'));
-    ELSEIF NEW.hora REGEXP '^[0-9]{1,2}[hH]' THEN
-        SET NEW.hora = TIME(STR_TO_DATE(REPLACE(REPLACE(NEW.hora, 'h', ':'), 'H', ':'), '%H:%i'));
+    SET NEW.numero = REPLACE(REPLACE(REPLACE(REPLACE(NEW.numero, '(', ''), ')', ''), '-', ''), ' ', '');
+    IF LENGTH(NEW.numero) = 11 THEN
+        SET NEW.numero = CONCAT('(', SUBSTRING(NEW.numero, 1, 2), ') ',
+                                 SUBSTRING(NEW.numero, 3, 5), '-',
+                                 SUBSTRING(NEW.numero, 8, 4));
     END IF;
-
-    IF TIME(NEW.hora) < '07:00:00' OR TIME(NEW.hora) > '19:00:00' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Horário de agendamento deve ser entre 07:00 e 19:00';
-    END IF;
-END //
+END//
 DELIMITER ;
 
 -- =========================
--- ÍNDICES IMPORTANTES
+-- TABELA: Certificado
 -- =========================
-CREATE INDEX idx_usuario_email ON tbl_usuario(email);
-CREATE INDEX idx_usuario_cpf ON tbl_usuario(cpf);
-CREATE INDEX idx_hospital_email ON tbl_hospital(email);
-CREATE INDEX idx_hospital_cnpj ON tbl_hospital(cnpj);
-
-CREATE INDEX idx_agendamento_data ON tbl_agendamento(data);
-CREATE INDEX idx_agendamento_status ON tbl_agendamento(status);
-CREATE INDEX idx_agendamento_hospital ON tbl_agendamento(id_hospital);
-
-CREATE INDEX idx_doacao_data ON tbl_doacao(data);
+CREATE TABLE tbl_certificado (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(50) NOT NULL,
+    organizacao VARCHAR(60) NOT NULL,
+    data_emissao DATE NOT NULL,
+    id_usuario INT,
+    FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id)
+);

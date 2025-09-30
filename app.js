@@ -395,6 +395,7 @@ app.delete('/v1/doevida/telefone/:id', cors(), async function(request, response)
  *                                      ENDPOINTS USUÁRIO
  *************************************************************************************************/
 // Inserir novo usuário
+// Cadastrar usuário
 app.post('/v1/doevida/usuario', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
     let dadosBody   = request.body
@@ -436,14 +437,15 @@ app.put('/v1/doevida/usuario/:id', cors(), bodyParserJson, async function(reques
     response.json(result)
 })
 
-
+// Login de usuário
 app.post('/v1/doevida/login', cors(), bodyParserJson, async function (request, response) {
     let contentType = request.headers['content-type']
-    let dadosBody = request.body
-    let result = await controllerUsuario.loginUsuario(dadosBody,contentType)
+    let dadosBody   = request.body
+    let result      = await controllerUsuario.loginUsuario(dadosBody, contentType)
     response.status(result.status_code)
     response.json(result)
 })
+
 
 
 /*************************************************************************************************

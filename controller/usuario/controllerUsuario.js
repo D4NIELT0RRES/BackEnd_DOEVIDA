@@ -1,14 +1,15 @@
 /***************************************************************************************
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD do USUÁRIO.
- * DATA: 28/09/2025
+ * DATA: 28/09/2025 (ajustado 29/09/2025)
  * AUTOR: Daniel Torres
- * Versão: 1.3
+ * Versão: 1.4
  ***************************************************************************************/
 
 const MESSAGE = require('../../modulo/config.js')
 const usuarioDAO = require('../../model/DAO/usuario.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
 const viaCep = require('../../viaCep.js')
+const bcrypt = require('bcrypt');
 
 //============================== INSERIR ==============================
 const inserirUsuario = async function(usuario, contentType){
@@ -20,28 +21,31 @@ const inserirUsuario = async function(usuario, contentType){
         if (
             !usuario.nome || usuario.nome.length > 70 ||
             !usuario.email || usuario.email.length > 100 ||
-            !usuario.senha_hash || usuario.senha_hash.length < 8 || usuario.senha_hash.length > 255 ||
+            !usuario.senha || usuario.senha.length < 8 || usuario.senha.length > 255 || // agora valida senha simples
             (usuario.cpf && usuario.cpf.length > 15) ||
-            !usuario.cep || usuario.cep.length > 10 ||
-            !usuario.data_nascimento ||
-            !usuario.id_tipo_sanguineo || isNaN(usuario.id_tipo_sanguineo) ||
+            (usuario.cep && usuario.cep.length > 10) ||
+            (usuario.data_nascimento && isNaN(Date.parse(usuario.data_nascimento))) ||
+            (usuario.id_banco_sangue && (isNaN(usuario.id_banco_sangue) || usuario.id_banco_sangue <= 0)) || 
             (usuario.foto_perfil && usuario.foto_perfil.length > 255) ||
             !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
-        const dadosEndereco = await viaCep.buscarCep(usuario.cep)
-        if(dadosEndereco.erro){
-            return { status: false, status_code: 400, message: dadosEndereco.message }
-        } else {
-            usuario.logradouro = dadosEndereco.logradouro
-            usuario.bairro = dadosEndereco.bairro
-            usuario.localidade = dadosEndereco.localidade
-            usuario.uf = dadosEndereco.uf
+        // Só busca endereço se houver CEP
+        if(usuario.cep){
+            const dadosEndereco = await viaCep.buscarCep(usuario.cep)
+            if(dadosEndereco.erro){
+                return { status: false, status_code: 400, message: dadosEndereco.message }
+            } else {
+                usuario.logradouro = dadosEndereco.logradouro
+                usuario.bairro = dadosEndereco.bairro
+                usuario.localidade = dadosEndereco.localidade
+                usuario.uf = dadosEndereco.uf
+            }
         }
 
-        if(usuario.numero && usuario.numero.length > 10){
+        if(usuario.numero && usuario.numero.length > 20){
             return { status: false, status_code: 400, message: "Número do endereço inválido" }
         }
 
@@ -50,9 +54,19 @@ const inserirUsuario = async function(usuario, contentType){
             return { status_code: 404, message: "Sexo não encontrado" }
         }
 
-        const resultUsuario = await usuarioDAO.insertUsuario(usuario)
+        // 🔑 Gera hash da senha antes de salvar
+        const hash = await bcrypt.hash(usuario.senha, 10)
+
+        const usuarioDB = {
+            ...usuario,
+            senha_hash: hash
+        }
+        delete usuarioDB.senha // não salva senha pura
+
+        const resultUsuario = await usuarioDAO.insertUsuario(usuarioDB)
         if(resultUsuario){
             return {
+                status: true,
                 status_code: 201,
                 message: "Usuário criado com sucesso",
                 usuario: resultUsuario
@@ -78,9 +92,9 @@ const atualizarUsuario = async function(usuario, id, contentType){
            !usuario.email || usuario.email.length > 100 ||
            !usuario.senha_hash || usuario.senha_hash.length > 255 ||
            (usuario.cpf && usuario.cpf.length > 15) ||
-           !usuario.cep || usuario.cep.length > 10 ||
-           !usuario.data_nascimento ||
-           !usuario.id_tipo_sanguineo || isNaN(usuario.id_tipo_sanguineo) ||
+           (usuario.cep && usuario.cep.length > 10) ||
+           (usuario.data_nascimento && isNaN(Date.parse(usuario.data_nascimento))) ||
+           !usuario.id_banco_sangue || isNaN(usuario.id_banco_sangue) || usuario.id_banco_sangue <= 0 ||
            !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0 ||
            !id || isNaN(id) || id <= 0
         ){
@@ -267,36 +281,104 @@ const buscarUsuarioNome = async function(nome){
 }
 
 //============================== LOGIN ==============================
-const loginUsuario = async function (dadosLogin, contentType) {
+const loginUsuario = async function (usuario, contentType) {
     try {
-        if(contentType === 'application/json'){
-
-            if(
-                !dadosLogin.email || dadosLogin.email.trim() === '' ||
-                !dadosLogin.senha_hash || dadosLogin.senha_hash.trim() === ''
-            ){
-                return MESSAGE.ERROR_INVALID_ADDRESS_FIELD;
-            }
-
-            const resultLogin = await usuarioDAO.loginUsuario(dadosLogin);
-            
-            if(resultLogin && typeof resultLogin === 'object' && resultLogin.length > 0){
-                return{
-                    status: true,
-                    status_code: 200,
-                    usuario: resultLogin
-                }
-            }else{
-                return MESSAGE.ERROR_NOT_FOUND
-            }
-        }else{
-            return MESSAGE.ERROR_CONTENT_TYPE
+        if (contentType !== 'application/json') {
+            return { status: false, status_code: 415, message: "Content-Type inválido" }
         }
+
+        if (!usuario.email || !usuario.senha) {
+            return { status: false, status_code: 400, message: "Email e senha obrigatórios" }
+        }
+
+        const dadosUsuario = await usuarioDAO.selectByEmailUsuario(usuario.email)
+
+        if (!dadosUsuario) {
+            return { status: false, status_code: 401, message: "Usuário não encontrado" }
+        }
+
+        const senhaCorreta = await bcrypt.compare(usuario.senha, dadosUsuario.senha_hash)
+        if (!senhaCorreta) {
+            return { status: false, status_code: 401, message: "Senha incorreta" }
+        }
+
+        // sucesso
+        return {
+            status: true,
+            status_code: 200,
+            message: "Login realizado com sucesso!",
+            usuario: {
+                id: dadosUsuario.id,
+                nome: dadosUsuario.nome,
+                email: dadosUsuario.email,
+                cpf: dadosUsuario.cpf,
+                cep: dadosUsuario.cep,
+                tipo_sanguineo: dadosUsuario.tipo_sanguineo_nome,
+                data_nascimento: dadosUsuario.data_nascimento,
+                foto_perfil: dadosUsuario.foto_perfil,
+                sexo: dadosUsuario.nome_sexo
+            }
+        };
     } catch (error) {
-        console.log("Erro no login do usuário", error)
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+        console.error("Erro no loginUsuario:", error);
+        return {
+            status: false,
+            status_code: 500,
+            message: "Erro interno no servidor"
+        };
     }
-}
+};
+
+const cadastrarUsuario = async function (usuario, contentType) {
+    try {
+        if (contentType !== 'application/json') {
+            return MESSAGE.ERROR_CONTENT_TYPE;
+        }
+
+        // Validação mínima (nome, email e senha obrigatórios)
+        if (!usuario.nome || !usuario.email || !usuario.senha || !usuario.confirmar_senha) {
+            return { status: false, status_code: 400, message: "Campos obrigatórios não preenchidos" };
+        }
+
+        // Confere se as senhas coincidem
+        if (usuario.senha !== usuario.confirmar_senha) {
+            return { status: false, status_code: 400, message: "As senhas não coincidem" };
+        }
+
+        // Gera hash da senha
+        const hash = await bcrypt.hash(usuario.senha, 10);
+
+        // Monta objeto final para inserir no banco
+        const usuarioDB = {
+            nome: usuario.nome,
+            email: usuario.email,
+            senha_hash: hash,
+            cpf: usuario.cpf || null,
+            cep: usuario.cep || null,
+            numero: usuario.numero || null,
+            data_nascimento: usuario.data_nascimento || null,
+            id_banco_sangue: usuario.id_banco_sangue || null,
+            foto_perfil: usuario.foto_perfil || null,
+            id_sexo: usuario.id_sexo || null
+        };
+
+        const novoUsuario = await usuarioDAO.insertUsuario(usuarioDB);
+
+        if (!novoUsuario) {
+            return { status: false, status_code: 500, message: "Erro ao cadastrar usuário" };
+        }
+
+        return {
+            status: true,
+            status_code: 201,
+            message: "Usuário criado com sucesso",
+            usuario: novoUsuario
+        };
+    } catch (error) {
+        console.error("Erro no cadastrarUsuario:", error);
+        return { status: false, status_code: 500, message: "Erro interno no servidor" };
+    }
+};
 
 module.exports = {
     inserirUsuario,
