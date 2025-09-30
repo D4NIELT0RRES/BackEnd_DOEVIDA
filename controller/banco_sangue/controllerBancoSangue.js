@@ -2,13 +2,10 @@
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD do BANCO DE SANGUE.
  * DATA: 22/09/2025
  * AUTOR: Daniel Torres
- * Versão: 1.0
+ * Versão: 2.0 (ajustada para id_tipo_sanguineo + id_hospital)
  ***************************************************************************************/
 
-// Import do arquivo de configuração para a mensagem e status code
 const MESSAGE = require('../../modulo/config.js')
-
-// Import do DAO para realizar um CRUD no banco de dados
 const bancoSangueDAO = require('../../model/DAO/banco_sangue')
 
 //============================== INSERIR ==============================
@@ -16,10 +13,11 @@ const inserirBancoSangue = async function (bancoSangue, contentType) {
     try {
         if (contentType == 'application/json') {
             if (
-                !bancoSangue.tipo_sanguineo || bancoSangue.tipo_sanguineo.length > 5 ||
-                !bancoSangue.quantidade || isNaN(bancoSangue.quantidade)
+                !bancoSangue.id_hospital || isNaN(bancoSangue.id_hospital) ||
+                !bancoSangue.id_tipo_sanguineo || isNaN(bancoSangue.id_tipo_sanguineo) ||
+                bancoSangue.quantidade === undefined || isNaN(bancoSangue.quantidade)
             ) {
-                return MESSAGE.ERROR_REQUIRED_FIELDS // 400
+                return MESSAGE.ERROR_REQUIRED_FIELDS
             } else {
                 let result = await bancoSangueDAO.insertBancoSangue(bancoSangue)
                 if (result) {
@@ -33,10 +31,11 @@ const inserirBancoSangue = async function (bancoSangue, contentType) {
                 }
             }
         } else {
-            return MESSAGE.ERROR_CONTENT_TYPE // 415
+            return MESSAGE.ERROR_CONTENT_TYPE
         }
     } catch (error) {
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+        console.log("Erro inserirBancoSangue:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
 
@@ -45,11 +44,12 @@ const atualizarBancoSangue = async function (bancoSangue, id, contentType) {
     try {
         if (contentType == 'application/json') {
             if (
-                !bancoSangue.tipo_sanguineo || bancoSangue.tipo_sanguineo.length > 5 ||
-                !bancoSangue.quantidade || isNaN(bancoSangue.quantidade) ||
+                !bancoSangue.id_hospital || isNaN(bancoSangue.id_hospital) ||
+                !bancoSangue.id_tipo_sanguineo || isNaN(bancoSangue.id_tipo_sanguineo) ||
+                bancoSangue.quantidade === undefined || isNaN(bancoSangue.quantidade) ||
                 !id || isNaN(id) || id <= 0
             ) {
-                return MESSAGE.ERROR_REQUIRED_FIELDS // 400
+                return MESSAGE.ERROR_REQUIRED_FIELDS
             } else {
                 let registro = await buscarBancoSangue(parseInt(id))
                 if (registro.status_code == 200) {
@@ -63,14 +63,15 @@ const atualizarBancoSangue = async function (bancoSangue, id, contentType) {
                         return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
                     }
                 } else {
-                    return MESSAGE.ERROR_NOT_FOUND // 404
+                    return MESSAGE.ERROR_NOT_FOUND
                 }
             }
         } else {
-            return MESSAGE.ERROR_CONTENT_TYPE // 415
+            return MESSAGE.ERROR_CONTENT_TYPE
         }
     } catch (error) {
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+        console.log("Erro atualizarBancoSangue:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
 
@@ -78,18 +79,19 @@ const atualizarBancoSangue = async function (bancoSangue, id, contentType) {
 const excluirBancoSangue = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
-            return MESSAGE.ERROR_REQUIRED_FIELDS // 400
+            return MESSAGE.ERROR_REQUIRED_FIELDS
         } else {
             let registro = await buscarBancoSangue(parseInt(id))
             if (registro.status_code == 200) {
                 let result = await bancoSangueDAO.deleteBancoSangue(parseInt(id))
                 return result ? MESSAGE.SUCCESS_DELETE_ITEM : MESSAGE.ERROR_INTERNAL_SERVER_MODEL
             } else {
-                return MESSAGE.ERROR_NOT_FOUND // 404
+                return MESSAGE.ERROR_NOT_FOUND
             }
         }
     } catch (error) {
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+        console.log("Erro excluirBancoSangue:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
 
@@ -106,13 +108,14 @@ const listarBancoSangue = async function () {
                     banco_sangue: result
                 }
             } else {
-                return MESSAGE.ERROR_NOT_FOUND // 404
+                return MESSAGE.ERROR_NOT_FOUND
             }
         } else {
-            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL // 500
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
         }
     } catch (error) {
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+        console.log("Erro listarBancoSangue:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
 
@@ -120,7 +123,7 @@ const listarBancoSangue = async function () {
 const buscarBancoSangue = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
-            return MESSAGE.ERROR_REQUIRED_FIELDS // 400
+            return MESSAGE.ERROR_REQUIRED_FIELDS
         } else {
             let result = await bancoSangueDAO.selectByIdBancoSangue(parseInt(id))
             if (result && typeof result == 'object') {
@@ -130,21 +133,22 @@ const buscarBancoSangue = async function (id) {
                     banco_sangue: result
                 }
             } else {
-                return MESSAGE.ERROR_NOT_FOUND // 404
+                return MESSAGE.ERROR_NOT_FOUND
             }
         }
     } catch (error) {
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+        console.log("Erro buscarBancoSangue:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
 
 //============================== BUSCAR POR TIPO SANGUÍNEO ==============================
-const buscarBancoSanguePorTipo = async function (tipo) {
+const buscarBancoSanguePorTipo = async function (id_tipo) {
     try {
-        if (!tipo || tipo.length > 5) {
-            return MESSAGE.ERROR_REQUIRED_FIELDS // 400
+        if (!id_tipo || isNaN(id_tipo)) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
         } else {
-            let result = await bancoSangueDAO.selectByTipoSanguineo(tipo)
+            let result = await bancoSangueDAO.selectByTipoSanguineo(parseInt(id_tipo))
             if (result && typeof result == 'object') {
                 if (result.length > 0) {
                     return {
@@ -153,14 +157,15 @@ const buscarBancoSanguePorTipo = async function (tipo) {
                         banco_sangue: result
                     }
                 } else {
-                    return MESSAGE.ERROR_NOT_FOUND // 404
+                    return MESSAGE.ERROR_NOT_FOUND
                 }
             } else {
-                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL // 500
+                return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
             }
         }
     } catch (error) {
-        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+        console.log("Erro buscarBancoSanguePorTipo:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
 
