@@ -9,7 +9,10 @@ const MESSAGE = require('../../modulo/config.js')
 const usuarioDAO = require('../../model/DAO/usuario.js')
 const controllerSexo = require('../sexo/controllerSexo.js')
 const viaCep = require('../../viaCep.js')
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+
+
 
 //============================== INSERIR ==============================
 const inserirUsuario = async function(usuario, contentType){
@@ -21,11 +24,11 @@ const inserirUsuario = async function(usuario, contentType){
         if (
             !usuario.nome || usuario.nome.length > 70 ||
             !usuario.email || usuario.email.length > 100 ||
-            !usuario.senha || usuario.senha.length < 8 || usuario.senha.length > 255 || // agora valida senha simples
+            !usuario.senha || usuario.senha.length < 8 || usuario.senha.length > 255 ||
             (usuario.cpf && usuario.cpf.length > 15) ||
             (usuario.cep && usuario.cep.length > 10) ||
             (usuario.data_nascimento && isNaN(Date.parse(usuario.data_nascimento))) ||
-            (usuario.id_banco_sangue && (isNaN(usuario.id_banco_sangue) || usuario.id_banco_sangue <= 0)) || 
+            (usuario.id_tipo_sanguineo && (isNaN(usuario.id_tipo_sanguineo) || usuario.id_tipo_sanguineo <= 0)) || 
             (usuario.foto_perfil && usuario.foto_perfil.length > 255) ||
             !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
@@ -54,7 +57,7 @@ const inserirUsuario = async function(usuario, contentType){
             return { status_code: 404, message: "Sexo não encontrado" }
         }
 
-        // 🔑 Gera hash da senha antes de salvar
+        // Gera hash da senha antes de salvar
         const hash = await bcrypt.hash(usuario.senha, 10)
 
         const usuarioDB = {
@@ -62,12 +65,13 @@ const inserirUsuario = async function(usuario, contentType){
             senha_hash: hash
         }
 
-        delete usuarioDB.senha // não salva senha pura
-        delete usuarioDB.confirmar_senha // não salva confirmar_senha
-        delete usuario.undefined
+        delete usuarioDB.senha
+        delete usuarioDB.confirmar_senha
+        delete usuarioDB.undefined
 
         if(!usuarioDB.logradouro) usuarioDB.logradouro = null
         if(!usuarioDB.id_sexo) usuarioDB.id_sexo = null
+        if(!usuarioDB.id_tipo_sanguineo) usuarioDB.id_tipo_sanguineo = null
 
         const resultUsuario = await usuarioDAO.insertUsuario(usuarioDB)
         if(resultUsuario){
@@ -100,7 +104,7 @@ const atualizarUsuario = async function(usuario, id, contentType){
            (usuario.cpf && usuario.cpf.length > 15) ||
            (usuario.cep && usuario.cep.length > 10) ||
            (usuario.data_nascimento && isNaN(Date.parse(usuario.data_nascimento))) ||
-           !usuario.id_banco_sangue || isNaN(usuario.id_banco_sangue) || usuario.id_banco_sangue <= 0 ||
+           !usuario.id_tipo_sanguineo || isNaN(usuario.id_tipo_sanguineo) || usuario.id_tipo_sanguineo <= 0 ||
            !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0 ||
            !id || isNaN(id) || id <= 0
         ){
@@ -119,17 +123,14 @@ const atualizarUsuario = async function(usuario, id, contentType){
 
         usuario.id = parseInt(id)
         const result = await usuarioDAO.updateUsuario(usuario)
-        if(result){
-            return MESSAGE.SUCCESS_UPDATE_ITEM
-        } else {
-            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
-        }
+        return result ? MESSAGE.SUCCESS_UPDATE_ITEM : MESSAGE.ERROR_INTERNAL_SERVER_MODEL
 
     }catch(error){
         console.error("Erro atualizarUsuario:", error)
         return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
+
 
 //============================== EXCLUIR ==============================
 const excluirUsuario = async function(id){
@@ -308,11 +309,22 @@ const loginUsuario = async function (usuario, contentType) {
             return { status: false, status_code: 401, message: "Senha incorreta" }
         }
 
+        const token = jwt.sign(
+            {
+                id: dadosUsuario.id,
+                nome: dadosUsuario.nome,
+                email: dadosUsuario.email
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES || '1h' }
+        )
+
         // sucesso
         return {
             status: true,
             status_code: 200,
             message: "Login realizado com sucesso!",
+            token,
             usuario: {
                 id: dadosUsuario.id,
                 nome: dadosUsuario.nome,

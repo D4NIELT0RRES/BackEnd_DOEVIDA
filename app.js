@@ -32,14 +32,20 @@ const cors       = require('cors')
 const bodyParser = require('body-parser')
 
 //Import das controllers para realizar o CRUD de dados
-const controllerAgendamento = require('./controller/agendamento/controllerAgendamento')
+const controllerAgendamento   = require('./controller/agendamento/controllerAgendamento')
 const controllerEstoqueSangue = require('./controller/banco_de_sangue/controllerEstoqueSangue')
-const controllerCertificado = require('./controller/certificado/controllerCertificado')
-const controllerDoacao      = require('./controller/doacao/controllerDoacao')
-const controllerHospital    = require('./controller/hospital/controllerHospital')
-const controllerSexo        = require('./controller/sexo/controllerSexo')
-const controllerTelefone    = require('./controller/telefone/controllerTelefone')
-const controllerUsuario     = require('./controller/usuario/controllerUsuario')
+const controllerCertificado   = require('./controller/certificado/controllerCertificado')
+const controllerDoacao        = require('./controller/doacao/controllerDoacao')
+const controllerHospital      = require('./controller/hospital/controllerHospital')
+const controllerSexo          = require('./controller/sexo/controllerSexo')
+const controllerTelefone      = require('./controller/telefone/controllerTelefone')
+const controllerUsuario       = require('./controller/usuario/controllerUsuario')
+const controllerTipoSanguineo = require('./controller/tipo_sanguineo/controllerTipoSanguineo')
+const controllerRecuperacao   = require('./controller/recuperacao/controllerRecuperacao')
+
+//Import do arquivo de autenticação
+const verificarToken = require('./middleware/auth')
+
 
 //Estabelecendo o formato de dados que deverá chegar no body da requisição (POST ou PUT)
 const bodyParserJson = bodyParser.json()
@@ -411,6 +417,16 @@ app.get('/v1/doevida/usuario', cors(), async function(request, response){
     response.json(result)
 })
 
+// Perfil do usuário (dados do token)
+app.get('/v1/doevida/perfil', cors(), verificarToken, async (request, response) => {
+    response.status(200).json({
+        status: true,
+        status_code: 200,
+        message: "Acesso liberado!",
+        usuario: request.user
+    })
+})
+
 // Buscar um usuário por ID
 app.get('/v1/doevida/usuario/:id', cors(), async function(request, response){
     let id     = request.params.id
@@ -445,6 +461,74 @@ app.post('/v1/doevida/login', cors(), bodyParserJson, async function (request, r
     response.status(result.status_code)
     response.json(result)
 })
+
+/*************************************************************************************************
+ *                           ENDPOINTS RECUPERAÇÃO DE SENHA
+ *************************************************************************************************/
+// Solicitar recuperação de senha (gera e envia código)
+app.post('/v1/doevida/recuperar-senha', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerRecuperacao.solicitarRecuperacao(dadosBody.email, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Redefinir senha (recebe código + nova senha)
+app.post('/v1/doevida/redefinir-senha', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerRecuperacao.redefinirSenha(dadosBody.codigo, dadosBody.novaSenha, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+
+/*************************************************************************************************
+ *                              ENDPOINTS TIPO SANGUÍNEO
+ *************************************************************************************************/
+// Inserir novo tipo sanguíneo
+app.post('/v1/doevida/tipo-sanguineo', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerTipoSanguineo.inserirTipoSanguineo(dadosBody, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Listar todos os tipos sanguíneos
+app.get('/v1/doevida/tipo-sanguineo', cors(), async function(request, response){
+    let result = await controllerTipoSanguineo.listarTiposSanguineos()
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Buscar um tipo sanguíneo por ID
+app.get('/v1/doevida/tipo-sanguineo/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerTipoSanguineo.buscarTipoSanguineo(id)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Atualizar um tipo sanguíneo por ID
+app.put('/v1/doevida/tipo-sanguineo/:id', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let id          = request.params.id
+    let dadosBody   = request.body
+    let result      = await controllerTipoSanguineo.atualizarTipoSanguineo(id, dadosBody, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Excluir um tipo sanguíneo por ID
+app.delete('/v1/doevida/tipo-sanguineo/:id', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerTipoSanguineo.excluirTipoSanguineo(id)
+    response.status(result.status_code)
+    response.json(result)
+})
+
 
 
 

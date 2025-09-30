@@ -2,7 +2,7 @@
  * OBJETIVO: Model responsável pelo CRUD de dados referente a USUÁRIO no BANCO DE DADOS.
  * DATA: 18/09/2025 (ajustado 28/09/2025)
  * AUTOR: Daniel Torres
- * Versão: 1.2
+ * Versão: 1.3 (corrigido JOINs e nomes das tabelas/colunas)
  ***************************************************************************************/
 
 const { PrismaClient } = require('@prisma/client')
@@ -19,7 +19,7 @@ const insertUsuario = async function (usuario) {
                 cpf,
                 cep,
                 data_nascimento,
-                id_banco_sangue,
+                id_tipo_sanguineo,
                 logradouro,
                 bairro,
                 localidade,
@@ -34,7 +34,7 @@ const insertUsuario = async function (usuario) {
                 ${usuario.cpf ? `'${usuario.cpf}'` : 'NULL'},
                 ${usuario.cep ? `'${usuario.cep}'` : 'NULL'},
                 ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'},
-                ${usuario.id_banco_sangue ? usuario.id_banco_sangue : 'NULL'},
+                ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'},
                 ${usuario.logradouro ? `'${usuario.logradouro}'` : 'NULL'},
                 ${usuario.bairro ? `'${usuario.bairro}'` : 'NULL'},
                 ${usuario.localidade ? `'${usuario.localidade}'` : 'NULL'},
@@ -55,7 +55,7 @@ const insertUsuario = async function (usuario) {
                     u.senha_hash,
                     u.cpf,
                     u.cep,
-                    bs.tipo_sanguineo AS tipo_sanguineo_nome,
+                    ts.tipo AS tipo_sanguineo_nome,
                     u.data_nascimento,
                     u.foto_perfil,
                     u.data_criacao,
@@ -68,12 +68,11 @@ const insertUsuario = async function (usuario) {
                     s.sexo as nome_sexo
                 FROM tbl_usuario u
                 LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-                LEFT JOIN tbl_banco_sangue bs ON u.id_banco_sangue = bs.id
+                LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
                 WHERE u.email = '${usuario.email}'
                 ORDER BY u.id DESC
                 LIMIT 1
             `);
-
             return criado[0]
         } else {
             return false;
@@ -82,7 +81,8 @@ const insertUsuario = async function (usuario) {
         console.error("Erro na DAO insertUsuario:", error);
         return false;
     }
-};
+}
+
 
 //============================== ATUALIZAR ==============================
 const updateUsuario = async function (usuario) {
@@ -102,7 +102,7 @@ const updateUsuario = async function (usuario) {
                 numero              = ${usuario.numero ? `'${usuario.numero}'` : 'NULL'},
                 data_nascimento     = ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'},
                 foto_perfil         = ${usuario.foto_perfil ? `'${usuario.foto_perfil}'` : 'NULL'},
-                id_banco_sangue     = ${usuario.id_banco_sangue ? usuario.id_banco_sangue : 'NULL'},
+                id_tipo_sanguineo   = ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'},
                 id_sexo             = ${usuario.id_sexo ? usuario.id_sexo : 'NULL'}
             WHERE id = ${usuario.id};
         `
@@ -113,6 +113,22 @@ const updateUsuario = async function (usuario) {
         return false
     }
 }
+
+// Atualizar senha do usuário
+const updateSenha = async (idUsuario, senhaHash) => {
+  try {
+    const sql = `
+      UPDATE tbl_usuario
+      SET senha_hash = '${senhaHash}'
+      WHERE id = ${idUsuario}
+    `
+    return await prisma.$executeRawUnsafe(sql)
+  } catch (error) {
+    console.error("ERRO updateSenha:", error)
+    return false
+  }
+}
+
 
 //============================== DELETAR ==============================
 const deleteUsuario = async function (id) {
@@ -142,7 +158,7 @@ const selectAllUsuario = async function () {
                 u.localidade,
                 u.uf,
                 u.numero,
-                bs.tipo_sanguineo AS tipo_sanguineo_nome,
+                ts.tipo AS tipo_sanguineo_nome,
                 u.data_nascimento,
                 u.foto_perfil,
                 u.data_criacao,
@@ -150,7 +166,7 @@ const selectAllUsuario = async function () {
                 s.sexo as nome_sexo
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-            LEFT JOIN tbl_banco_sangue bs ON u.id_banco_sangue = bs.id
+            LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
             ORDER BY u.id ASC
         `
         let result = await prisma.$queryRawUnsafe(sql)
@@ -172,7 +188,7 @@ const selectByIdUsuario = async function (id) {
                 u.senha_hash,
                 u.cpf,
                 u.cep,
-                bs.tipo_sanguineo AS tipo_sanguineo_nome,
+                ts.tipo AS tipo_sanguineo_nome,
                 u.data_nascimento,
                 u.foto_perfil,
                 u.data_criacao,
@@ -180,7 +196,7 @@ const selectByIdUsuario = async function (id) {
                 s.sexo as nome_sexo
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-            LEFT JOIN tbl_banco_sangue bs ON u.id_banco_sangue = bs.id
+            LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
             WHERE u.id = ${id}
         `
         let result = await prisma.$queryRawUnsafe(sql)
@@ -202,7 +218,7 @@ const selectByEmailUsuario = async function (email) {
                 u.senha_hash,
                 u.cpf,
                 u.cep,
-                bs.tipo_sanguineo AS tipo_sanguineo_nome,
+                ts.tipo AS tipo_sanguineo_nome,
                 u.data_nascimento,
                 u.foto_perfil,
                 u.data_criacao,
@@ -210,7 +226,7 @@ const selectByEmailUsuario = async function (email) {
                 s.sexo as nome_sexo
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-            LEFT JOIN tbl_banco_sangue bs ON u.id_banco_sangue = bs.id
+            LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
             WHERE u.email = '${email}'
         `
         let result = await prisma.$queryRawUnsafe(sql)
@@ -240,7 +256,7 @@ const selectByNomeUsuario = async function (nome) {
                 s.sexo as nome_sexo
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-            LEFT JOIN tbl_tipos_sanguineos ts ON u.id_tipo_sanguineo = ts.id
+            LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
             WHERE u.nome LIKE '%${nome}%'
         `
         let result = await prisma.$queryRawUnsafe(sql)
@@ -270,8 +286,8 @@ const loginUsuario = async function (dadosLogin) {
                 s.sexo as nome_sexo
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-            LEFT JOIN tbl_tipos_sanguineos ts ON u.id_tipo_sanguineo = ts.id
-            WHERE (u.email = '${dadosLogin.usuario}' AND u.nome = '${dadosLogin.usuario}')
+            LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
+            WHERE (u.email = '${dadosLogin.usuario}' OR u.nome = '${dadosLogin.usuario}')
             AND u.senha_hash = '${dadosLogin.senha_hash}'
         `
 
@@ -296,5 +312,6 @@ module.exports = {
     selectByIdUsuario,
     selectByEmailUsuario,
     selectByNomeUsuario,
-    loginUsuario
+    loginUsuario,
+    updateSenha
 }
