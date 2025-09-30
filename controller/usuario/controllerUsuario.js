@@ -61,7 +61,13 @@ const inserirUsuario = async function(usuario, contentType){
             ...usuario,
             senha_hash: hash
         }
+
         delete usuarioDB.senha // não salva senha pura
+        delete usuarioDB.confirmar_senha // não salva confirmar_senha
+        delete usuario.undefined
+
+        if(!usuarioDB.logradouro) usuarioDB.logradouro = null
+        if(!usuarioDB.id_sexo) usuarioDB.id_sexo = null
 
         const resultUsuario = await usuarioDAO.insertUsuario(usuarioDB)
         if(resultUsuario){
