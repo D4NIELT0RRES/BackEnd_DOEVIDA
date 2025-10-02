@@ -22,14 +22,14 @@ const inserirUsuario = async function(usuario, contentType){
         }
 
         if (
-            !usuario.nome || usuario.nome.length > 70 ||
+            !usuario.nome  || usuario.nome.length  > 70  ||
             !usuario.email || usuario.email.length > 100 ||
-            !usuario.senha || usuario.senha.length < 8 || usuario.senha.length > 255 ||
+            !usuario.senha || usuario.senha.length < 8   || usuario.senha.length > 255 ||
             (usuario.cpf && usuario.cpf.length > 15) ||
             (usuario.cep && usuario.cep.length > 10) ||
-            (usuario.data_nascimento && isNaN(Date.parse(usuario.data_nascimento))) ||
+            (usuario.data_nascimento   && isNaN(Date.parse(usuario.data_nascimento))) ||
             (usuario.id_tipo_sanguineo && (isNaN(usuario.id_tipo_sanguineo) || usuario.id_tipo_sanguineo <= 0)) || 
-            (usuario.foto_perfil && usuario.foto_perfil.length > 255) ||
+            (usuario.foto_perfil       && usuario.foto_perfil.length > 255) ||
             !usuario.id_sexo || isNaN(usuario.id_sexo) || usuario.id_sexo <= 0
         ){
             return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -74,7 +74,10 @@ const inserirUsuario = async function(usuario, contentType){
         if(!usuarioDB.id_tipo_sanguineo) usuarioDB.id_tipo_sanguineo = null
 
         const resultUsuario = await usuarioDAO.insertUsuario(usuarioDB)
+        console.log(resultUsuario);
+
         if(resultUsuario){
+            
             return {
                 status: true,
                 status_code: 201,

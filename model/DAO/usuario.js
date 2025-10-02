@@ -15,11 +15,11 @@ const insertUsuario = async function (usuario) {
             INSERT INTO tbl_usuario (
                 nome,
                 email,
-                senha_hash,
+                senha,
                 cpf,
                 cep,
                 data_nascimento,
-                id_tipo_sanguineo,
+                tipo_sanguineo,
                 logradouro,
                 bairro,
                 localidade,
@@ -34,7 +34,7 @@ const insertUsuario = async function (usuario) {
                 ${usuario.cpf ? `'${usuario.cpf}'` : 'NULL'},
                 ${usuario.cep ? `'${usuario.cep}'` : 'NULL'},
                 ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'},
-                ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'},
+                ${usuario.tipo_sanguineo ? usuario.tipo_sanguineo : 'NULL'},
                 ${usuario.logradouro ? `'${usuario.logradouro}'` : 'NULL'},
                 ${usuario.bairro ? `'${usuario.bairro}'` : 'NULL'},
                 ${usuario.localidade ? `'${usuario.localidade}'` : 'NULL'},
@@ -52,7 +52,7 @@ const insertUsuario = async function (usuario) {
                     u.id,
                     u.nome,
                     u.email,
-                    u.senha_hash,
+                    u.senha,
                     u.cpf,
                     u.cep,
                     ts.tipo AS tipo_sanguineo_nome,
@@ -68,7 +68,7 @@ const insertUsuario = async function (usuario) {
                     s.sexo as nome_sexo
                 FROM tbl_usuario u
                 LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-                LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
+                LEFT JOIN tbl_tipo_sanguineo ts ON u.tipo_sanguineo = ts.id
                 WHERE u.email = '${usuario.email}'
                 ORDER BY u.id DESC
                 LIMIT 1
