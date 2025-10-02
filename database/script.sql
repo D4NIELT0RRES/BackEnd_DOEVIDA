@@ -6,34 +6,34 @@ DROP DATABASE IF EXISTS db_doevida_tcc;
 CREATE DATABASE db_doevida_tcc;
 USE db_doevida_tcc;
 
+show tables;
 -- =========================
--- TABELA: Banco de Sangue
+-- TABELA: Tipo Sanguíneo
 -- =========================
-CREATE TABLE tbl_banco_sangue (
+CREATE TABLE tbl_tipo_sanguineo (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    tipo_sanguineo VARCHAR(5) NOT NULL,
-    quantidade VARCHAR(5) NOT NULL
+    tipo VARCHAR(5) NOT NULL UNIQUE
 );
 
 DELIMITER //
-CREATE TRIGGER before_bancosangue_insert
-BEFORE INSERT ON tbl_banco_sangue
+CREATE TRIGGER before_tipo_sanguineo_insert
+BEFORE INSERT ON tbl_tipo_sanguineo
 FOR EACH ROW
 BEGIN
-    SET NEW.tipo_sanguineo = UPPER(NEW.tipo_sanguineo);
+    SET NEW.tipo = UPPER(NEW.tipo);
 END//
 DELIMITER ;
 
 -- Seed tipos sanguíneos
-INSERT INTO tbl_banco_sangue (tipo_sanguineo, quantidade) VALUES
-('A+', '0'),
-('A-', '0'),
-('B+', '0'),
-('B-', '0'),
-('AB+', '0'),
-('AB-', '0'),
-('O+', '0'),
-('O-', '0');
+INSERT INTO tbl_tipo_sanguineo (tipo) VALUES
+('A+'),
+('A-'),
+('B+'),
+('B-'),
+('AB+'),
+('AB-'),
+('O+'),
+('O-');
 
 -- =========================
 -- TABELA: Sexo
@@ -56,8 +56,7 @@ DELIMITER ;
 INSERT INTO tbl_sexo (sexo) VALUES
 ('MASCULINO'),
 ('FEMININO'),
-('OUTRO'),
-('PREFIRO NÃO INFORMAR');
+('OUTRO');
 
 -- =========================
 -- TABELA: Usuário
@@ -80,14 +79,14 @@ CREATE TABLE tbl_usuario (
     foto_perfil VARCHAR(255) NULL,
 
     -- Relacionamentos opcionais
-    id_banco_sangue INT NULL,
+    id_tipo_sanguineo INT NULL,
     id_sexo INT NULL,
 
     -- Controle
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (id_banco_sangue) REFERENCES tbl_banco_sangue(id),
+    FOREIGN KEY (id_tipo_sanguineo) REFERENCES tbl_tipo_sanguineo(id),
     FOREIGN KEY (id_sexo) REFERENCES tbl_sexo(id)
 );
 
@@ -219,6 +218,19 @@ END//
 DELIMITER ;
 
 -- =========================
+-- TABELA: Banco de Sangue (estoque)
+-- =========================
+CREATE TABLE tbl_banco_sangue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_hospital INT NOT NULL,
+    id_tipo_sanguineo INT NOT NULL,
+    quantidade INT NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id),
+    FOREIGN KEY (id_tipo_sanguineo) REFERENCES tbl_tipo_sanguineo(id)
+);
+
+-- =========================
 -- TABELA: Doação
 -- =========================
 CREATE TABLE tbl_doacao (
@@ -280,3 +292,30 @@ CREATE TABLE tbl_certificado (
     id_usuario INT,
     FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id)
 );
+
+CREATE TABLE tbl_recuperacao_senha (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    codigo VARCHAR(50) NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usado BOOLEAN DEFAULT 0,
+
+    FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id)
+);
+
+
+-- =========================
+-- SEED AUTOMÁTICA DO ESTOQUE
+-- =========================
+-- Para cada hospital cadastrado, cria registros de estoque (0) para todos os tipos sanguíneos
+INSERT INTO tbl_banco_sangue (id_hospital, id_tipo_sanguineo, quantidade)
+SELECT h.id, t.id, 0
+FROM tbl_hospital h
+CROSS JOIN tbl_tipo_sanguineo t;
+
+-- =========================
+-- TESTES
+-- =========================
+SELECT * FROM tbl_usuario;
+SELECT * FROM tbl_tipo_sanguineo;
+SELECT * FROM tbl_banco_sangue;
