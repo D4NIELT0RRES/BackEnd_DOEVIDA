@@ -1,69 +1,161 @@
-const usuarioDAO = require('../../model/DAO/usuario')
+/***************************************************************************************
+ * OBJETIVO: Controller responsável pela recuperação de senha dos usuários.
+ * DATA: 30/09/2025
+ * AUTOR: Daniel Torres
+ * Versão: 2.0 (Integrado com envio de email)
+ ***************************************************************************************/
+
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
+const MESSAGE = require('../../modulo/config.js')
 const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const { enviarEmail } = require('../../utils/emailService') // ajuste também
+const crypto = require('crypto')
+const emailService = require('../../service/emailService.js')
 
+//============================== SOLICITAR RECUPERAÇÃO ==============================
+const solicitarRecuperacao = async function(email, contentType) {
+    try {
+        if (String(contentType).toLowerCase() !== 'application/json') {
+            return MESSAGE.ERROR_CONTENT_TYPE
+        }
 
-// Solicitar recuperação de senha
-const solicitarRecuperacao = async (email) => {
-  try {
-    const usuario = await usuarioDAO.selectByEmailUsuario(email)
-    if (!usuario) {
-      return { status_code: 404, message: "Usuário não encontrado" }
+        if (!email || !email.includes('@')) {
+            return { status: false, status_code: 400, message: "Email válido é obrigatório" }
+        }
+
+        // Buscar usuário pelo email
+        const usuario = await prisma.tbl_usuario.findUnique({
+            where: { email: email.toLowerCase() },
+            select: { id: true, nome: true, email: true }
+        })
+
+        if (!usuario) {
+            // Por segurança, retornamos sucesso mesmo se o email não existir
+            return {
+                status: true,
+                status_code: 200,
+                message: "Se o email existir em nossa base, você receberá as instruções de recuperação"
+            }
+        }
+
+        // Gerar código de 6 dígitos
+        const codigo = crypto.randomInt(100000, 999999).toString()
+
+        // Limpar códigos antigos deste usuário
+        await prisma.tbl_recuperacao_senha.deleteMany({
+            where: { id_usuario: usuario.id }
+        })
+
+        // Criar novo registro de recuperação
+        await prisma.tbl_recuperacao_senha.create({
+            data: {
+                id_usuario: usuario.id,
+                codigo: codigo,
+                usado: false
+            }
+        })
+
+        // Enviar email com o código
+        const resultadoEmail = await emailService.enviarEmailRecuperacao(
+            usuario.email, 
+            usuario.nome, 
+            codigo
+        )
+
+        if (!resultadoEmail.sucesso) {
+            console.error('Erro no envio do email:', resultadoEmail.erro)
+            return {
+                status: false,
+                status_code: 500,
+                message: "Erro interno. Tente novamente mais tarde."
+            }
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            message: "Código de recuperação enviado para seu email"
+        }
+
+    } catch (error) {
+        console.error("Erro no controller solicitarRecuperacao:", error)
+        return {
+            status: false,
+            status_code: 500,
+            message: "Erro interno no servidor"
+        }
     }
-
-    // 🔑 Gerar token JWT só para recuperação de senha
-    const tokenRecuperacao = jwt.sign(
-      { id: usuario.id, email: usuario.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" } // expira em 15 minutos
-    )
-
-    // Enviar e-mail com link contendo o token
-    const link = `http://localhost:3000/redefinir-senha?token=${tokenRecuperacao}`
-
-    await enviarEmail(
-      usuario.email,
-      "Recuperação de Senha - DoeVida",
-      `Olá ${usuario.nome}, acesse o link para redefinir sua senha: ${link}`,
-      `<p>Olá <b>${usuario.nome}</b>,</p>
-       <p>Clique no link abaixo para redefinir sua senha (expira em 15 minutos):</p>
-       <a href="${link}">${link}</a>`
-    )
-
-    return { status_code: 200, message: "E-mail de recuperação enviado" }
-  } catch (err) {
-    console.error("Erro solicitarRecuperacao:", err)
-    return { status_code: 500, message: "Erro interno" }
-  }
 }
 
+//============================== REDEFINIR SENHA ==============================
+const redefinirSenha = async function(codigo, novaSenha, contentType) {
+    try {
+        if (String(contentType).toLowerCase() !== 'application/json') {
+            return MESSAGE.ERROR_CONTENT_TYPE
+        }
 
-// Redefinir senha
-const redefinirSenha = async (token, novaSenha) => {
-  try {
-    // 🔎 Validar o token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const idUsuario = decoded.id
+        if (!codigo || !novaSenha) {
+            return { status: false, status_code: 400, message: "Código e nova senha são obrigatórios" }
+        }
 
-    // Gerar hash da nova senha
-    const senhaHash = await bcrypt.hash(novaSenha, 10)
+        if (novaSenha.length < 8) {
+            return { status: false, status_code: 400, message: "A nova senha deve ter pelo menos 8 caracteres" }
+        }
 
-    // Atualizar no banco
-    const updateSenha = await usuarioDAO.updateSenha(idUsuario, senhaHash)
-    if (!updateSenha) {
-      return { status_code: 500, message: "Erro ao atualizar senha" }
+        // Buscar código de recuperação válido (não usado e criado há menos de 15 minutos)
+        const recuperacao = await prisma.tbl_recuperacao_senha.findFirst({
+            where: {
+                codigo: codigo,
+                usado: false,
+                criado_em: {
+                    gte: new Date(Date.now() - 15 * 60 * 1000) // 15 minutos atrás
+                }
+            },
+            include: {
+                usuario: { select: { id: true, nome: true, email: true } }
+            }
+        })
+
+        if (!recuperacao) {
+            return {
+                status: false,
+                status_code: 400,
+                message: "Código inválido ou expirado"
+            }
+        }
+
+        // Gerar hash da nova senha
+        const senhaHash = await bcrypt.hash(novaSenha, 10)
+
+        // Atualizar senha do usuário
+        await prisma.tbl_usuario.update({
+            where: { id: recuperacao.id_usuario },
+            data: { senha_hash: senhaHash }
+        })
+
+        // Marcar código como usado
+        await prisma.tbl_recuperacao_senha.update({
+            where: { id: recuperacao.id },
+            data: { usado: true }
+        })
+
+        return {
+            status: true,
+            status_code: 200,
+            message: "Senha redefinida com sucesso"
+        }
+
+    } catch (error) {
+        console.error("Erro no controller redefinirSenha:", error)
+        return {
+            status: false,
+            status_code: 500,
+            message: "Erro interno no servidor"
+        }
     }
-
-    return { status_code: 200, message: "Senha redefinida com sucesso!" }
-  } catch (err) {
-    console.error("Erro redefinirSenha:", err)
-    return { status_code: 400, message: "Token inválido ou expirado" }
-  }
 }
-
 
 module.exports = {
-  solicitarRecuperacao,
-  redefinirSenha
+    solicitarRecuperacao,
+    redefinirSenha
 }
