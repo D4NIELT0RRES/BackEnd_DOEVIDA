@@ -15,11 +15,11 @@ const insertUsuario = async function (usuario) {
             INSERT INTO tbl_usuario (
                 nome,
                 email,
-                senha,
+                senha_hash,
                 cpf,
                 cep,
                 data_nascimento,
-                tipo_sanguineo,
+                id_tipo_sanguineo,
                 logradouro,
                 bairro,
                 localidade,
@@ -30,11 +30,11 @@ const insertUsuario = async function (usuario) {
             ) VALUES (
                 '${usuario.nome}',
                 '${usuario.email}',
-                '${usuario.senha_hash}',
+                '${usuario.senha_hash}', 
                 ${usuario.cpf ? `'${usuario.cpf}'` : 'NULL'},
                 ${usuario.cep ? `'${usuario.cep}'` : 'NULL'},
                 ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'},
-                ${usuario.tipo_sanguineo ? usuario.tipo_sanguineo : 'NULL'},
+                ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'},
                 ${usuario.logradouro ? `'${usuario.logradouro}'` : 'NULL'},
                 ${usuario.bairro ? `'${usuario.bairro}'` : 'NULL'},
                 ${usuario.localidade ? `'${usuario.localidade}'` : 'NULL'},
@@ -43,8 +43,9 @@ const insertUsuario = async function (usuario) {
                 ${usuario.id_sexo ? usuario.id_sexo : 'NULL'},
                 ${usuario.foto_perfil ? `'${usuario.foto_perfil}'` : 'NULL'}
             );
-        `
-        let result = await prisma.$executeRawUnsafe(sqlInsert)
+        `;
+
+        let result = await prisma.$executeRawUnsafe(sqlInsert);
 
         if (result) {
             let criado = await prisma.$queryRawUnsafe(`
@@ -52,7 +53,7 @@ const insertUsuario = async function (usuario) {
                     u.id,
                     u.nome,
                     u.email,
-                    u.senha,
+                    u.senha_hash,
                     u.cpf,
                     u.cep,
                     ts.tipo AS tipo_sanguineo_nome,
@@ -68,12 +69,12 @@ const insertUsuario = async function (usuario) {
                     s.sexo as nome_sexo
                 FROM tbl_usuario u
                 LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
-                LEFT JOIN tbl_tipo_sanguineo ts ON u.tipo_sanguineo = ts.id
+                LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
                 WHERE u.email = '${usuario.email}'
                 ORDER BY u.id DESC
                 LIMIT 1
             `);
-            return criado[0]
+            return criado[0];
         } else {
             return false;
         }
@@ -81,7 +82,7 @@ const insertUsuario = async function (usuario) {
         console.error("Erro na DAO insertUsuario:", error);
         return false;
     }
-}
+};
 
 
 //============================== ATUALIZAR ==============================
@@ -158,16 +159,17 @@ const selectAllUsuario = async function () {
                 u.localidade,
                 u.uf,
                 u.numero,
-                ts.tipo AS tipo_sanguineo_nome,
+                ts.tipo AS tipo_sanguineo_nome,  -- Nome do tipo sanguíneo
                 u.data_nascimento,
                 u.foto_perfil,
                 u.data_criacao,
                 u.data_atualizacao,
-                s.sexo as nome_sexo
+                s.sexo AS nome_sexo
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
             LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
             ORDER BY u.id ASC
+
         `
         let result = await prisma.$queryRawUnsafe(sql)
         return result.length > 0 ? result : false
@@ -176,6 +178,7 @@ const selectAllUsuario = async function () {
         return false
     }
 }
+
 
 //============================== BUSCAR POR ID ==============================
 const selectByIdUsuario = async function (id) {

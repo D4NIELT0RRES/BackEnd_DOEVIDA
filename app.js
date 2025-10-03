@@ -412,7 +412,7 @@ app.post('/v1/doevida/usuario', cors(), bodyParserJson, async function(request, 
 
 // Listar todos os usuários
 app.get('/v1/doevida/usuario', cors(), async function(request, response){
-    let result = await controllerUsuario.listarUsuario()
+    let result = await controllerUsuario.listarUsuarios()
     response.status(result.status_code)
     response.json(result)
 })

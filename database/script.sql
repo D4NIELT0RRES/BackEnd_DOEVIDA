@@ -6,7 +6,10 @@ DROP DATABASE IF EXISTS db_doevida_tcc;
 CREATE DATABASE db_doevida_tcc;
 USE db_doevida_tcc;
 
+select * from tbl_usuario;
 show tables;
+SHOW COLUMNS FROM tbl_usuario;
+
 -- =========================
 -- TABELA: Tipo Sanguíneo
 -- =========================
