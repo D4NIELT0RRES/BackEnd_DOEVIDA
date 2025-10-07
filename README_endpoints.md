@@ -1,4 +1,353 @@
-# Documentação dos Endpoints - API DOE VIDA
+# 📋 **DOCUMENTAÇÃO COMPLETA DA API DOE VIDA PARA INTEGRAÇÃO FRONTEND**
+
+## 🔧 **CONFIGURAÇÕES BASE**
+
+```javascript
+// Configuração base da API
+const BASE_URL = 'http://localhost:8080/v1/doevida'
+
+// Headers padrão para requisições
+const headers = {
+    'Content-Type': 'application/json'
+}
+
+// Para requisições autenticadas, adicionar:
+const headersAuth = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+}
+```
+
+---
+
+## 🔐 **AUTENTICAÇÃO E USUÁRIO**
+
+### **1. CADASTRO DE USUÁRIO**
+```javascript
+// POST /v1/doevida/usuario
+const cadastrarUsuario = async (dadosUsuario) => {
+    const response = await fetch(`${BASE_URL}/usuario`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            nome: "João Silva",
+            email: "joao@email.com",
+            senha: "12345678",
+            cpf: "123.456.789-00", // Opcional
+            cep: "12345-678", // Opcional
+            data_nascimento: "1990-05-22", // Opcional (formato: YYYY-MM-DD)
+            foto_perfil: "https://example.com/foto.jpg", // Opcional
+            id_sexo: 1, // 1=Masculino, 2=Feminino, 3=Outro
+            id_tipo_sanguineo: 1 // Opcional (1-8, conforme tipos disponíveis)
+        })
+    })
+    return await response.json()
+}
+
+// RESPOSTA DE SUCESSO:
+{
+    "status": true,
+    "status_code": 201,
+    "message": "Usuário criado com sucesso!",
+    "usuario": {
+        "id": 1,
+        "nome": "João Silva",
+        "email": "joao@email.com",
+        "cpf": "123.456.789-00",
+        "cep": "12345-678",
+        "data_nascimento": "1990-05-22T00:00:00.000Z",
+        "foto_perfil": "https://example.com/foto.jpg",
+        "sexo": { "sexo": "MASCULINO" },
+        "tbl_tipo_sanguineo": { "tipo": "A+" }
+    }
+}
+```
+
+### **2. LOGIN**
+```javascript
+// POST /v1/doevida/login
+const login = async (email, senha) => {
+    const response = await fetch(`${BASE_URL}/login`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            email: "joao@email.com",
+            senha: "12345678"
+        })
+    })
+    return await response.json()
+}
+
+// RESPOSTA DE SUCESSO:
+{
+    "status": true,
+    "status_code": 200,
+    "message": "Login realizado com sucesso!",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "usuario": {
+        "id": 1,
+        "nome": "João Silva",
+        "email": "joao@email.com"
+    }
+}
+```
+
+### **3. PERFIL DO USUÁRIO** (Requer autenticação)
+```javascript
+// GET /v1/doevida/perfil
+const obterPerfil = async (token) => {
+    const response = await fetch(`${BASE_URL}/perfil`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    return await response.json()
+}
+
+// RESPOSTA:
+{
+    "status": true,
+    "status_code": 200,
+    "usuario": {
+        "id": 1,
+        "nome": "João Silva",
+        "email": "joao@email.com",
+        // ... outros dados do perfil
+    }
+}
+```
+
+---
+
+## 🔑 **RECUPERAÇÃO DE SENHA**
+
+### **4. SOLICITAR RECUPERAÇÃO**
+```javascript
+// POST /v1/doevida/recuperar-senha
+const solicitarRecuperacao = async (email) => {
+    const response = await fetch(`${BASE_URL}/recuperar-senha`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            email: "joao@email.com"
+        })
+    })
+    return await response.json()
+}
+
+// RESPOSTA DE SUCESSO:
+{
+    "status": true,
+    "status_code": 200,
+    "message": "Código de recuperação enviado para o email!"
+}
+```
+
+### **5. REDEFINIR SENHA**
+```javascript
+// POST /v1/doevida/redefinir-senha
+const redefinirSenha = async (codigo, novaSenha) => {
+    const response = await fetch(`${BASE_URL}/redefinir-senha`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            codigo: "123456",
+            novaSenha: "novaSenha123"
+        })
+    })
+    return await response.json()
+}
+
+// RESPOSTA DE SUCESSO:
+{
+    "status": true,
+    "status_code": 200,
+    "message": "Senha redefinida com sucesso!"
+}
+```
+
+---
+
+## 🏠 **DADOS PARA TELA HOME**
+
+### **6. LISTAR TIPOS SANGUÍNEOS**
+```javascript
+// GET /v1/doevida/tipo-sanguineo
+const obterTiposSanguineos = async () => {
+    const response = await fetch(`${BASE_URL}/tipo-sanguineo`, {
+        method: 'GET',
+        headers: headers
+    })
+    return await response.json()
+}
+
+// RESPOSTA:
+{
+    "status": true,
+    "status_code": 200,
+    "tipos_sanguineos": [
+        { "id": 1, "tipo": "A+" },
+        { "id": 2, "tipo": "A-" },
+        { "id": 3, "tipo": "B+" },
+        { "id": 4, "tipo": "B-" },
+        { "id": 5, "tipo": "AB+" },
+        { "id": 6, "tipo": "AB-" },
+        { "id": 7, "tipo": "O+" },
+        { "id": 8, "tipo": "O-" }
+    ]
+}
+```
+
+### **7. LISTAR SEXOS**
+```javascript
+// GET /v1/doevida/sexo-usuario
+const obterSexos = async () => {
+    const response = await fetch(`${BASE_URL}/sexo-usuario`, {
+        method: 'GET',
+        headers: headers
+    })
+    return await response.json()
+}
+
+// RESPOSTA:
+{
+    "status": true,
+    "status_code": 200,
+    "sexos": [
+        { "id": 1, "sexo": "MASCULINO" },
+        { "id": 2, "sexo": "FEMININO" },
+        { "id": 3, "sexo": "OUTRO" }
+    ]
+}
+```
+
+### **8. LISTAR HOSPITAIS**
+```javascript
+// GET /v1/doevida/hospital
+const obterHospitais = async () => {
+    const response = await fetch(`${BASE_URL}/hospital`, {
+        method: 'GET',
+        headers: headers
+    })
+    return await response.json()
+}
+```
+
+---
+
+## 📱 **EXEMPLO DE IMPLEMENTAÇÃO NO FRONTEND**
+
+### **Serviço de API (api.js)**
+```javascript
+class ApiService {
+    constructor() {
+        this.baseURL = 'http://localhost:8080/v1/doevida'
+        this.token = localStorage.getItem('token')
+    }
+
+    // Headers base
+    getHeaders(needsAuth = false) {
+        const headers = { 'Content-Type': 'application/json' }
+        if (needsAuth && this.token) {
+            headers.Authorization = `Bearer ${this.token}`
+        }
+        return headers
+    }
+
+    // Cadastro
+    async cadastrar(dados) {
+        const response = await fetch(`${this.baseURL}/usuario`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(dados)
+        })
+        return await response.json()
+    }
+
+    // Login
+    async login(email, senha) {
+        const response = await fetch(`${this.baseURL}/login`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ email, senha })
+        })
+        const result = await response.json()
+        
+        if (result.status && result.token) {
+            localStorage.setItem('token', result.token)
+            this.token = result.token
+        }
+        
+        return result
+    }
+
+    // Recuperar senha
+    async recuperarSenha(email) {
+        const response = await fetch(`${this.baseURL}/recuperar-senha`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ email })
+        })
+        return await response.json()
+    }
+
+    // Redefinir senha
+    async redefinirSenha(codigo, novaSenha) {
+        const response = await fetch(`${this.baseURL}/redefinir-senha`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ codigo, novaSenha })
+        })
+        return await response.json()
+    }
+
+    // Logout
+    logout() {
+        localStorage.removeItem('token')
+        this.token = null
+    }
+}
+
+export default new ApiService()
+```
+
+---
+
+## 🚨 **TRATAMENTO DE ERROS**
+
+### **Possíveis códigos de erro:**
+- **400**: Dados inválidos ou incompletos
+- **401**: Token inválido ou expirado
+- **404**: Usuário não encontrado
+- **409**: Email já cadastrado
+- **500**: Erro interno do servidor
+
+### **Exemplo de resposta de erro:**
+```javascript
+{
+    "status": false,
+    "status_code": 400,
+    "message": "Email ou senha inválidos"
+}
+```
+
+---
+
+## 🔄 **URL BASE E PORTA**
+
+```javascript
+// Durante desenvolvimento
+const BASE_URL = 'http://localhost:8080/v1/doevida'
+
+// Para produção (quando fizer deploy)
+const BASE_URL = 'https://seudominio.com/v1/doevida'
+```
+
+---
+
+# DOCUMENTAÇÃO ORIGINAL DOS ENDPOINTS
 
 ## Endpoints Usuário
 

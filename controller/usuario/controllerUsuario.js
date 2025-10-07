@@ -83,7 +83,7 @@ const inserirUsuario = async function(dadosUsuario, contentType){
                 data_nascimento: true,
                 foto_perfil: true,
                 sexo: { select: { sexo: true } },
-                tipo_sanguineo: { select: { tipo: true } }
+                tbl_tipo_sanguineo: { select: { tipo: true } }
             }
         })
 
@@ -229,7 +229,7 @@ const listarUsuarios = async function(){
                 data_nascimento: true,
                 foto_perfil: true,
                 sexo: { select: { sexo: true } },
-                tipo_sanguineo: { select: { tipo: true } }
+                tbl_tipo_sanguineo: { select: { tipo: true } }
             }
         })
 
@@ -269,7 +269,7 @@ const buscarUsuario = async function(idUsuario){
                 data_nascimento: true,
                 foto_perfil: true,
                 sexo: { select: { id: true, sexo: true } },
-                tipo_sanguineo: { select: { id: true, tipo: true } }
+                tbl_tipo_sanguineo: { select: { id: true, tipo: true } }
             }
         })
 

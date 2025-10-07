@@ -112,7 +112,7 @@ const redefinirSenha = async function(codigo, novaSenha, contentType) {
                 }
             },
             include: {
-                usuario: { select: { id: true, nome: true, email: true } }
+                tbl_usuario: { select: { id: true, nome: true, email: true } }
             }
         })
 
