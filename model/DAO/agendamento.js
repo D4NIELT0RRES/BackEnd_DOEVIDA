@@ -324,9 +324,12 @@ const selectDiasDisponiveis = async function (hospitalId, anoMes, slotMinutos = 
             
             const dataStr = dataAtual.toISOString().split('T')[0]
             
-            // Gerar slots de horário para o dia
-            const [horaAbertura, minutoAbertura] = horario_abertura.split(':').map(Number)
-            const [horaFechamento, minutoFechamento] = horario_fechamento.split(':').map(Number)
+            // Extrair horário do formato DateTime ISO - conversão direta
+            const horaAberturaStr = horario_abertura.toISOString().substring(11, 19) // Extrai HH:MM:SS
+            const horaFechamentoStr = horario_fechamento.toISOString().substring(11, 19) // Extrai HH:MM:SS
+            
+            const [horaAbertura, minutoAbertura] = horaAberturaStr.split(':').map(Number)
+            const [horaFechamento, minutoFechamento] = horaFechamentoStr.split(':').map(Number)
             
             let temVagaNodia = false
             
@@ -353,8 +356,9 @@ const selectDiasDisponiveis = async function (hospitalId, anoMes, slotMinutos = 
                                    AND id_hospital = ${hospitalId}`
                     
                     let countResult = await prisma.$queryRawUnsafe(sqlCount)
+                    const totalAgendamentos = Number(countResult[0].total) // Converter BigInt para Number
                     
-                    if (countResult[0].total < capacidade_maxima) {
+                    if (totalAgendamentos < capacidade_maxima) {
                         temVagaNodia = true
                         break
                     }
@@ -395,9 +399,12 @@ const selectHorariosDoDia = async function (hospitalId, data, slotMinutos = 60, 
         const hoje = new Date()
         const dataSlot = new Date(data)
         
-        // Gerar slots de horário
-        const [horaAbertura, minutoAbertura] = horario_abertura.split(':').map(Number)
-        const [horaFechamento, minutoFechamento] = horario_fechamento.split(':').map(Number)
+        // Extrair horário do formato DateTime ISO - conversão direta
+        const horaAberturaStr = horario_abertura.toISOString().substring(11, 19) // Extrai HH:MM:SS
+        const horaFechamentoStr = horario_fechamento.toISOString().substring(11, 19) // Extrai HH:MM:SS
+        
+        const [horaAbertura, minutoAbertura] = horaAberturaStr.split(':').map(Number)
+        const [horaFechamento, minutoFechamento] = horaFechamentoStr.split(':').map(Number)
         
         // Iterar pelos slots do dia
         for (let hora = horaAbertura; hora < horaFechamento; hora++) {
@@ -421,7 +428,8 @@ const selectHorariosDoDia = async function (hospitalId, data, slotMinutos = 60, 
                                AND id_hospital = ${hospitalId}`
                 
                 let countResult = await prisma.$queryRawUnsafe(sqlCount)
-                const vagas = capacidade_maxima - countResult[0].total
+                const totalAgendamentos = Number(countResult[0].total) // Converter BigInt para Number
+                const vagas = capacidade_maxima - totalAgendamentos
                 
                 // Adicionar horário baseado no parâmetro retornarTodos
                 if (retornarTodos || vagas > 0) {
@@ -494,8 +502,9 @@ const insertAgendamentoTx = async function (userId, hospitalId, data, hora) {
                            AND id_hospital = ${hospitalId}`
             
             let countResult = await tx.$queryRawUnsafe(sqlCount)
+            const totalAgendamentos = Number(countResult[0].total) // Converter BigInt para Number
             
-            if (countResult[0].total >= capacidade_maxima) {
+            if (totalAgendamentos >= capacidade_maxima) {
                 throw new Error('SEM_VAGAS')
             }
             

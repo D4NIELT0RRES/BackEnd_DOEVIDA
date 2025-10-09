@@ -45,6 +45,8 @@ CREATE TABLE tbl_sexo (
     sexo VARCHAR(15) NOT NULL
 );
 
+SELECT * FROM tbl_sexo;
+
 DELIMITER //
 CREATE TRIGGER before_sexo_insert
 BEFORE INSERT ON tbl_sexo
