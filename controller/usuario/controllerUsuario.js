@@ -2,12 +2,11 @@
  * OBJETIVO: Controller responsável pela regra de negócio do CRUD do USUÁRIO.
  * DATA: 28/09/2025 (ajustado 30/09/2025)
  * AUTOR: Daniel Torres
- * Versão: 2.0 (Refatorado com Prisma ORM)
+ * Versão: 2.0 (Refatorado com DAO)
  ***************************************************************************************/
 
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
 const MESSAGE = require('../../modulo/config.js')
+const usuarioDAO = require('../../model/DAO/usuario.js')
 const viaCep = require('../../viaCep.js')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
@@ -52,53 +51,23 @@ const inserirUsuario = async function(dadosUsuario, contentType){
         }
 
         // Gera hash da senha
-        const senhaHash = await bcrypt.hash(dadosUsuario.senha, 10)
+        dadosUsuario.senha_hash = await bcrypt.hash(dadosUsuario.senha, 10)
 
-        // Monta o objeto para o Prisma
-        const novoUsuario = {
-            nome: dadosUsuario.nome,
-            email: dadosUsuario.email.toLowerCase(),
-            senha_hash: senhaHash,
-            cpf: dadosUsuario.cpf,
-            cep: dadosUsuario.cep,
-            logradouro: dadosUsuario.logradouro,
-            bairro: dadosUsuario.bairro,
-            localidade: dadosUsuario.localidade,
-            uf: dadosUsuario.uf,
-            numero: dadosUsuario.numero,
-            data_nascimento: dadosUsuario.data_nascimento ? new Date(dadosUsuario.data_nascimento) : null,
-            foto_perfil: dadosUsuario.foto_perfil,
-            id_sexo: Number(dadosUsuario.id_sexo),
-            id_tipo_sanguineo: dadosUsuario.id_tipo_sanguineo ? Number(dadosUsuario.id_tipo_sanguineo) : null
-        }
+        const usuarioCriado = await usuarioDAO.insertUsuario(dadosUsuario)
 
-        const usuarioCriado = await prisma.tbl_usuario.create({
-            data: novoUsuario,
-            select: {
-                id: true,
-                nome: true,
-                email: true,
-                cpf: true,
-                cep: true,
-                data_nascimento: true,
-                foto_perfil: true,
-                sexo: { select: { sexo: true } },
-                tbl_tipo_sanguineo: { select: { tipo: true } }
+        if(usuarioCriado){
+            return {
+                status: true,
+                status_code: 201,
+                message: "Usuário criado com sucesso",
+                usuario: usuarioCriado
             }
-        })
-
-        return {
-            status: true,
-            status_code: 201,
-            message: "Usuário criado com sucesso",
-            usuario: usuarioCriado
+        } else {
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
         }
 
     }catch(error){
         console.error("Erro no controller inserirUsuario:", error)
-        if (error.code === 'P2002') { // Erro de campo único duplicado
-            return { status: false, status_code: 409, message: `Erro: ${error.meta.target.join(', ')} já está em uso.` }
-        }
         return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
@@ -111,7 +80,7 @@ const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
         }
 
         if (!idUsuario || isNaN(idUsuario)) {
-            return MESSAGE.ERROR_INVALID_ID
+            return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
         // Validações de campos obrigatórios
@@ -123,13 +92,13 @@ const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
-        const usuarioAtual = await prisma.tbl_usuario.findUnique({ where: { id: Number(idUsuario) }})
-        if (!usuarioAtual) {
+        const usuarioExistente = await usuarioDAO.selectByIdUsuario(parseInt(idUsuario))
+        if (!usuarioExistente) {
             return MESSAGE.ERROR_NOT_FOUND
         }
 
         // Busca de endereço via CEP, se informado
-        if(dadosUsuario.cep && dadosUsuario.cep !== usuarioAtual.cep){
+        if(dadosUsuario.cep){
             const dadosEndereco = await viaCep.buscarCep(dadosUsuario.cep)
             if(dadosEndereco.erro){
                 return { status: false, status_code: 400, message: dadosEndereco.message }
@@ -140,46 +109,22 @@ const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
             dadosUsuario.uf = dadosEndereco.uf
         }
 
-        // Monta o objeto para o Prisma
-        const dadosUpdate = {
-            nome: dadosUsuario.nome,
-            email: dadosUsuario.email.toLowerCase(),
-            cpf: dadosUsuario.cpf,
-            cep: dadosUsuario.cep,
-            logradouro: dadosUsuario.logradouro,
-            bairro: dadosUsuario.bairro,
-            localidade: dadosUsuario.localidade,
-            uf: dadosUsuario.uf,
-            numero: dadosUsuario.numero,
-            data_nascimento: dadosUsuario.data_nascimento ? new Date(dadosUsuario.data_nascimento) : null,
-            foto_perfil: dadosUsuario.foto_perfil,
-            id_sexo: Number(dadosUsuario.id_sexo),
-            id_tipo_sanguineo: dadosUsuario.id_tipo_sanguineo ? Number(dadosUsuario.id_tipo_sanguineo) : null
-        }
+        dadosUsuario.id = parseInt(idUsuario)
+        const usuarioAtualizado = await usuarioDAO.updateUsuario(dadosUsuario)
 
-        const usuarioAtualizado = await prisma.tbl_usuario.update({
-            where: { id: Number(idUsuario) },
-            data: dadosUpdate,
-            select: {
-                id: true,
-                nome: true,
-                email: true,
-                // ... outros campos que desejar retornar
+        if(usuarioAtualizado){
+            return {
+                status: true,
+                status_code: 200,
+                message: "Usuário atualizado com sucesso",
+                usuario: usuarioAtualizado
             }
-        })
-
-        return {
-            status: true,
-            status_code: 200,
-            message: MESSAGE.SUCCESS_UPDATE_ITEM.message,
-            usuario: usuarioAtualizado
+        } else {
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
         }
 
     }catch(error){
         console.error("Erro no controller atualizarUsuario:", error)
-        if (error.code === 'P2002') {
-            return { status: false, status_code: 409, message: `Erro: ${error.meta.target.join(', ')} já está em uso.` }
-        }
         return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
@@ -189,24 +134,24 @@ const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
 const excluirUsuario = async function(idUsuario){
     try{
         if(!idUsuario || isNaN(idUsuario)){
-            return MESSAGE.ERROR_INVALID_ID
+            return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
-        const usuario = await prisma.tbl_usuario.findUnique({ where: { id: Number(idUsuario) }})
+        const usuario = await usuarioDAO.selectByIdUsuario(parseInt(idUsuario))
         if(!usuario){
             return MESSAGE.ERROR_NOT_FOUND
         }
 
-        await prisma.tbl_usuario.delete({ where: { id: Number(idUsuario) }})
+        const resultado = await usuarioDAO.deleteUsuario(parseInt(idUsuario))
         
-        return MESSAGE.SUCCESS_DELETE_ITEM
+        if(resultado){
+            return MESSAGE.SUCCESS_DELETE_ITEM
+        } else {
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
 
     }catch(error){
         console.error("Erro no controller excluirUsuario:", error)
-        // Tratar erros de restrição de chave estrangeira, se necessário
-        if (error.code === 'P2003') {
-            return { status: false, status_code: 409, message: "Não é possível excluir o usuário pois ele está associado a outros registros." }
-        }
         return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
@@ -214,27 +159,15 @@ const excluirUsuario = async function(idUsuario){
 //============================== LISTAR TODOS ==============================
 const listarUsuarios = async function(){
     try{
-        const usuarios = await prisma.tbl_usuario.findMany({
-            select: {
-                id: true,
-                nome: true,
-                email: true,
-                cpf: true,
-                cep: true,
-                logradouro: true,
-                bairro: true,
-                localidade: true,
-                uf: true,
-                numero: true,
-                data_nascimento: true,
-                foto_perfil: true,
-                sexo: { select: { sexo: true } },
-                tbl_tipo_sanguineo: { select: { tipo: true } }
-            }
-        })
+        const usuarios = await usuarioDAO.selectAllUsuario()
 
         if(usuarios && usuarios.length > 0){
-            return { status: true, status_code: 200, quantidade: usuarios.length, usuarios: usuarios }
+            return { 
+                status: true, 
+                status_code: 200, 
+                quantidade: usuarios.length, 
+                usuarios: usuarios 
+            }
         } else {
             return MESSAGE.ERROR_NOT_FOUND
         }
@@ -250,31 +183,17 @@ const listarUsuarios = async function(){
 const buscarUsuario = async function(idUsuario){
     try{
         if(!idUsuario || isNaN(idUsuario)){
-            return MESSAGE.ERROR_INVALID_ID
+            return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
-        const usuario = await prisma.tbl_usuario.findUnique({
-            where: { id: Number(idUsuario) },
-            select: {
-                id: true,
-                nome: true,
-                email: true,
-                cpf: true,
-                cep: true,
-                logradouro: true,
-                bairro: true,
-                localidade: true,
-                uf: true,
-                numero: true,
-                data_nascimento: true,
-                foto_perfil: true,
-                sexo: { select: { id: true, sexo: true } },
-                tbl_tipo_sanguineo: { select: { id: true, tipo: true } }
-            }
-        })
+        const usuario = await usuarioDAO.selectByIdUsuario(parseInt(idUsuario))
 
         if(usuario){
-            return { status: true, status_code: 200, usuario: usuario }
+            return { 
+                status: true, 
+                status_code: 200, 
+                usuario: usuario 
+            }
         } else {
             return MESSAGE.ERROR_NOT_FOUND
         }
@@ -296,9 +215,7 @@ const loginUsuario = async function (dadosLogin, contentType) {
             return { status: false, status_code: 400, message: "Email e senha são obrigatórios." }
         }
 
-        const usuario = await prisma.tbl_usuario.findUnique({
-            where: { email: dadosLogin.email.toLowerCase() }
-        })
+        const usuario = await usuarioDAO.selectByEmailUsuario(dadosLogin.email.toLowerCase())
 
         if (!usuario) {
             return { status: false, status_code: 401, message: "Usuário ou senha inválidos." }
@@ -318,7 +235,7 @@ const loginUsuario = async function (dadosLogin, contentType) {
         return {
             status: true,
             status_code: 200,
-            message: "Login bem-sucedido!",
+            message: "Login realizado com sucesso",
             token,
             usuario: usuarioSemSenha
         };

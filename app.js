@@ -66,18 +66,27 @@ app.use((request, response, next) =>{
 /*************************************************************************************************
  *                                      ENDPOINTS AGENDAMENTO
  *************************************************************************************************/
-// Inserir um novo agendamento
-app.post('/v1/doevida/agendamento', cors(), bodyParserJson, async function(request, response){
-    let contentType = request.headers['content-type']
-    let dadosBody   = request.body
-    let result      = await controllerAgendamento.inserirAgendamento(dadosBody, contentType)
+// Listar todos os agendamentos
+app.get('/v1/doevida/agendamento', cors(), async function(request, response){
+    let result = await controllerAgendamento.listarAgendamento()
     response.status(result.status_code)
     response.json(result)
 })
 
-// Listar todos os agendamentos
-app.get('/v1/doevida/agendamento', cors(), async function(request, response){
-    let result = await controllerAgendamento.listarAgendamento()
+// Buscar agendamentos por status
+app.get('/v1/doevida/agendamento/status/:status', cors(), async function(request, response) {
+    let status = request.params.status
+    let result = await controllerAgendamento.buscarAgendamentoPorStatus(status)
+    
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Listar meus agendamentos (protegido por autenticação)
+app.get('/v1/doevida/agendamento/me', cors(), verificarToken, async function(request, response){
+    let userId = request.user.id
+    let futuros = request.query.futuros === '1'
+    let result = await controllerAgendamento.listarMeusAgendamentos(userId, futuros)
     response.status(result.status_code)
     response.json(result)
 })
@@ -90,10 +99,12 @@ app.get('/v1/doevida/agendamento/:id', cors(), async function(request, response)
     response.json(result)
 })
 
-// Excluir um agendamento por ID
-app.delete('/v1/doevida/agendamento/:id', cors(), async function(request, response){
-    let id     = request.params.id
-    let result = await controllerAgendamento.excluirAgendamento(id)
+// Criar novo agendamento (protegido por autenticação)
+app.post('/v1/doevida/agendamento', cors(), bodyParserJson, verificarToken, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody = request.body
+    let userId = request.user.id
+    let result = await controllerAgendamento.criarAgendamento(dadosBody, contentType, userId)
     response.status(result.status_code)
     response.json(result)
 })
@@ -108,11 +119,11 @@ app.put('/v1/doevida/agendamento/:id', cors(), bodyParserJson, async function(re
     response.json(result)
 })
 
-// Buscar agendamentos por status
-app.get('/v1/doevida/agendamento/status/:status', cors(), async function(request, response) {
-    let status = request.params.status
-    let result = await controllerAgendamento.buscarAgendamentoPorStatus(status)
-    
+// Cancelar meu agendamento (protegido por autenticação)
+app.delete('/v1/doevida/agendamento/:id', cors(), verificarToken, async function(request, response){
+    let agendamentoId = request.params.id
+    let userId = request.user.id
+    let result = await controllerAgendamento.cancelarMeuAgendamento(agendamentoId, userId)
     response.status(result.status_code)
     response.json(result)
 })
@@ -134,6 +145,30 @@ app.get('/v1/agendamento/disponibilidade', cors(), async function(request, respo
     // mantendo o comportamento original (controlador define o campo de status)
     response.status(disponibilidade.status)
     response.json(disponibilidade)
+})
+
+/*************************************************************************************************
+ *                              NOVAS ROTAS PARA TELA DE AGENDAMENTO
+ *************************************************************************************************/
+// Listar dias disponíveis de um hospital
+app.get('/v1/doevida/hospital/:id/dias-disponiveis', cors(), async function(request, response){
+    let hospitalId = request.params.id
+    let mes = request.query.mes
+    let slot = request.query.slot || 60
+    let result = await controllerAgendamento.listarDiasDisponiveis(hospitalId, mes, slot)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Listar horários disponíveis de um dia específico
+app.get('/v1/doevida/hospital/:id/horarios', cors(), async function(request, response){
+    let hospitalId = request.params.id
+    let data = request.query.data
+    let slot = request.query.slot || 60
+    let todos = request.query.todos === '1'
+    let result = await controllerAgendamento.listarHorariosDoDia(hospitalId, data, slot, todos)
+    response.status(result.status_code)
+    response.json(result)
 })
 
 /*************************************************************************************************

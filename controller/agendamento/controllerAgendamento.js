@@ -314,6 +314,295 @@ const verificarDisponibilidade = async function(data, hora, id_hospital){
     }
 }
 
+//============================== NOVAS FUNÇÕES PARA TELA DE AGENDAMENTO ==============================
+
+//============================== LISTAR DIAS DISPONÍVEIS ==============================
+const listarDiasDisponiveis = async function(hospitalId, mes, slotMinutos = 60){
+    try{
+        // Validação de parâmetros
+        if(!hospitalId || isNaN(hospitalId) || hospitalId <= 0){
+            return {
+                status: false,
+                status_code: 400,
+                message: "ID do hospital inválido"
+            }
+        }
+
+        if(!mes || !/^\d{4}-\d{2}$/.test(mes)){
+            return {
+                status: false,
+                status_code: 400,
+                message: "Formato do mês inválido. Use YYYY-MM"
+            }
+        }
+
+        if(slotMinutos && (isNaN(slotMinutos) || slotMinutos <= 0)){
+            return {
+                status: false,
+                status_code: 400,
+                message: "Slot de minutos deve ser um número positivo"
+            }
+        }
+
+        // Verificar se hospital existe
+        const hospitalExistente = await controllerHospital.buscarHospital(hospitalId)
+        if(!hospitalExistente || hospitalExistente.status_code !== 200){
+            return {
+                status: false,
+                status_code: 404,
+                message: "Hospital não encontrado"
+            }
+        }
+
+        const diasDisponiveis = await agendamentoDAO.selectDiasDisponiveis(parseInt(hospitalId), mes, parseInt(slotMinutos))
+        
+        if(diasDisponiveis === false){
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            hospitalId: parseInt(hospitalId),
+            mes: mes,
+            slotMinutos: parseInt(slotMinutos),
+            diasDisponiveis: diasDisponiveis
+        }
+
+    }catch(error){
+        console.error("Erro listarDiasDisponiveis:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== LISTAR HORÁRIOS DO DIA ==============================
+const listarHorariosDoDia = async function(hospitalId, data, slotMinutos = 60, todos = false){
+    try{
+        // Validação de parâmetros
+        if(!hospitalId || isNaN(hospitalId) || hospitalId <= 0){
+            return {
+                status: false,
+                status_code: 400,
+                message: "ID do hospital inválido"
+            }
+        }
+
+        if(!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)){
+            return {
+                status: false,
+                status_code: 400,
+                message: "Formato da data inválido. Use YYYY-MM-DD"
+            }
+        }
+
+        if(slotMinutos && (isNaN(slotMinutos) || slotMinutos <= 0)){
+            return {
+                status: false,
+                status_code: 400,
+                message: "Slot de minutos deve ser um número positivo"
+            }
+        }
+
+        // Verificar se hospital existe
+        const hospitalExistente = await controllerHospital.buscarHospital(hospitalId)
+        if(!hospitalExistente || hospitalExistente.status_code !== 200){
+            return {
+                status: false,
+                status_code: 404,
+                message: "Hospital não encontrado"
+            }
+        }
+
+        const horarios = await agendamentoDAO.selectHorariosDoDia(
+            parseInt(hospitalId), 
+            data, 
+            parseInt(slotMinutos), 
+            todos
+        )
+        
+        if(horarios === false){
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            hospitalId: parseInt(hospitalId),
+            data: data,
+            slotMinutos: parseInt(slotMinutos),
+            horarios: horarios
+        }
+
+    }catch(error){
+        console.error("Erro listarHorariosDoDia:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== CRIAR AGENDAMENTO ==============================
+const criarAgendamento = async function(dadosAgendamento, contentType, userId){
+    try{
+        if(contentType !== 'application/json'){
+            return MESSAGE.ERROR_CONTENT_TYPE
+        }
+
+        if(!userId || isNaN(userId) || userId <= 0){
+            return {
+                status: false,
+                status_code: 401,
+                message: "Usuário não autenticado"
+            }
+        }
+
+        if(!dadosAgendamento.id_hospital || isNaN(dadosAgendamento.id_hospital) || dadosAgendamento.id_hospital <= 0 ||
+           !dadosAgendamento.data || !/^\d{4}-\d{2}-\d{2}$/.test(dadosAgendamento.data) ||
+           !dadosAgendamento.hora || !/^\d{2}:\d{2}:\d{2}$/.test(dadosAgendamento.hora)
+        ){
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const resultado = await agendamentoDAO.insertAgendamentoTx(
+            parseInt(userId),
+            parseInt(dadosAgendamento.id_hospital),
+            dadosAgendamento.data,
+            dadosAgendamento.hora
+        )
+
+        if(resultado === false){
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+        // Tratar erros específicos
+        if(resultado.error){
+            switch(resultado.error){
+                case 'HOSPITAL_NOT_FOUND':
+                    return {
+                        status: false,
+                        status_code: 404,
+                        message: "Hospital não encontrado"
+                    }
+                case 'DATA_PASSADA':
+                    return {
+                        status: false,
+                        status_code: 400,
+                        message: "Não é possível agendar para data passada"
+                    }
+                case 'HORA_PASSADA':
+                    return {
+                        status: false,
+                        status_code: 400,
+                        message: "Não é possível agendar para horário passado"
+                    }
+                case 'FORA_HORARIO_FUNCIONAMENTO':
+                    return {
+                        status: false,
+                        status_code: 400,
+                        message: "Horário fora do funcionamento do hospital"
+                    }
+                case 'SEM_VAGAS':
+                    return {
+                        status: false,
+                        status_code: 409,
+                        message: "Não há vagas disponíveis para este horário"
+                    }
+                default:
+                    return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+            }
+        }
+
+        return {
+            status: true,
+            status_code: 201,
+            message: "Agendamento criado com sucesso",
+            agendamento: resultado
+        }
+
+    }catch(error){
+        console.error("Erro criarAgendamento:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== LISTAR MEUS AGENDAMENTOS ==============================
+const listarMeusAgendamentos = async function(userId, futuros = false){
+    try{
+        if(!userId || isNaN(userId) || userId <= 0){
+            return {
+                status: false,
+                status_code: 401,
+                message: "Usuário não autenticado"
+            }
+        }
+
+        const agendamentos = await agendamentoDAO.selectAgendamentosDoUsuario(parseInt(userId), futuros)
+        
+        if(agendamentos === false){
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+        if(!agendamentos || agendamentos.length === 0){
+            return {
+                status: true,
+                status_code: 200,
+                message: "Nenhum agendamento encontrado",
+                agendamentos: []
+            }
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            items: agendamentos.length,
+            agendamentos: agendamentos
+        }
+
+    }catch(error){
+        console.error("Erro listarMeusAgendamentos:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+//============================== CANCELAR MEU AGENDAMENTO ==============================
+const cancelarMeuAgendamento = async function(agendamentoId, userId){
+    try{
+        if(!agendamentoId || isNaN(agendamentoId) || agendamentoId <= 0){
+            return {
+                status: false,
+                status_code: 400,
+                message: "ID do agendamento inválido"
+            }
+        }
+
+        if(!userId || isNaN(userId) || userId <= 0){
+            return {
+                status: false,
+                status_code: 401,
+                message: "Usuário não autenticado"
+            }
+        }
+
+        const resultado = await agendamentoDAO.deleteAgendamentoDoUsuario(parseInt(agendamentoId), parseInt(userId))
+        
+        if(resultado === false){
+            return {
+                status: false,
+                status_code: 404,
+                message: "Agendamento não encontrado ou não pertence ao usuário"
+            }
+        }
+
+        return {
+            status: true,
+            status_code: 200,
+            message: "Agendamento cancelado com sucesso"
+        }
+
+    }catch(error){
+        console.error("Erro cancelarMeuAgendamento:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirAgendamento,
     atualizarAgendamento,
@@ -325,5 +614,11 @@ module.exports = {
     buscarAgendamentoPorDoacao,
     buscarAgendamentoPorHospital,
     buscarAgendamentoPorData,
-    verificarDisponibilidade
+    verificarDisponibilidade,
+    // Novas funções para tela de agendamento
+    listarDiasDisponiveis,
+    listarHorariosDoDia,
+    criarAgendamento,
+    listarMeusAgendamentos,
+    cancelarMeuAgendamento
 }

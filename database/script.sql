@@ -247,12 +247,12 @@ CREATE TABLE tbl_doacao (
 -- =========================
 CREATE TABLE tbl_agendamento (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    status ENUM('Agendado', 'Em espera', 'Concluído') NOT NULL DEFAULT 'Em espera',
+    status ENUM('Agendado', 'Em espera', 'Concluído') NOT NULL DEFAULT 'Agendado',
     data DATE NOT NULL,
     hora TIME NOT NULL,
-    id_usuario INT,
-    id_doacao INT,
-    id_hospital INT,
+    id_usuario INT NOT NULL,
+    id_doacao INT NULL,
+    id_hospital INT NOT NULL,
     FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id),
     FOREIGN KEY (id_doacao) REFERENCES tbl_doacao(id),
     FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
@@ -316,8 +316,83 @@ FROM tbl_hospital h
 CROSS JOIN tbl_tipo_sanguineo t;
 
 -- =========================
+-- ÍNDICES PARA PERFORMANCE
+-- =========================
+-- Índice para otimizar consultas de agendamento por hospital, data e hora
+CREATE INDEX idx_agendamento_hospital_data_hora ON tbl_agendamento (id_hospital, data, hora);
+
+-- Índice para otimizar consultas de agendamento por usuário
+CREATE INDEX idx_agendamento_usuario ON tbl_agendamento (id_usuario, data, hora);
+
+-- =========================
+-- DADOS DE TESTE (SEEDS)
+-- =========================
+
+-- Inserir hospital de teste
+INSERT INTO tbl_hospital (
+    nome, email, senha, cnpj, crm, cep, telefone, 
+    capacidade_maxima, convenios, horario_abertura, 
+    horario_fechamento, foto, complemento
+) VALUES (
+    'Hospital Central',
+    'contato@hospitalcentral.com.br',
+    '$2b$10$hash_exemplo_senha',
+    '12.345.678/0001-90',
+    'CRM12345SP',
+    '01234-567',
+    '(11) 99999-9999',
+    5,
+    'SUS, Unimed, Bradesco Saúde',
+    '08:00:00',
+    '18:00:00',
+    'https://exemplo.com/hospital.jpg',
+    'Próximo ao metrô'
+);
+
+INSERT INTO tbl_hospital (
+    nome, email, senha, cnpj, crm, cep, telefone, 
+    capacidade_maxima, convenios, horario_abertura, 
+    horario_fechamento, foto, complemento
+) VALUES (
+    'Hospital Regional',
+    'atendimento@hospitalregional.com.br',
+    '$2b$10$hash_exemplo_senha2',
+    '98.765.432/0001-10',
+    'CRM67890SP',
+    '04567-890',
+    '(11) 88888-8888',
+    3,
+    'SUS, Porto Seguro, Amil',
+    '07:00:00',
+    '19:00:00',
+    'https://exemplo.com/hospital2.jpg',
+    'Estacionamento gratuito'
+);
+
+INSERT INTO tbl_hospital (
+    nome, email, senha, cnpj, crm, cep, telefone, 
+    capacidade_maxima, convenios, horario_abertura, 
+    horario_fechamento, foto, complemento
+) VALUES (
+    'Centro Médico',
+    'info@centromedico.com.br',
+    '$2b$10$hash_exemplo_senha3',
+    '11.222.333/0001-44',
+    'CRM11111SP',
+    '05678-901',
+    '(11) 77777-7777',
+    8,
+    'SUS, Sul América, Golden Cross',
+    '06:00:00',
+    '20:00:00',
+    'https://exemplo.com/centro.jpg',
+    'Atendimento 24h emergência'
+);
+
+-- =========================
 -- TESTES
 -- =========================
 SELECT * FROM tbl_usuario;
 SELECT * FROM tbl_tipo_sanguineo;
 SELECT * FROM tbl_banco_sangue;
+SELECT * FROM tbl_hospital;

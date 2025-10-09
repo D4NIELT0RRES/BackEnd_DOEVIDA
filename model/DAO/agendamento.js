@@ -290,6 +290,316 @@ const verificarDisponibilidade = async function (data, hora, id_hospital) {
     }
 }
 
+//============================== NOVAS FUNÇÕES PARA TELA DE AGENDAMENTO ==============================
+
+//============================== LISTAR DIAS DISPONÍVEIS ==============================
+const selectDiasDisponiveis = async function (hospitalId, anoMes, slotMinutos = 60) {
+    try {
+        // Buscar informações do hospital
+        let sqlHospital = `SELECT capacidade_maxima, horario_abertura, horario_fechamento 
+                          FROM tbl_hospital 
+                          WHERE id = ${hospitalId}`
+        
+        let hospitalInfo = await prisma.$queryRawUnsafe(sqlHospital)
+        
+        if (!hospitalInfo || hospitalInfo.length === 0) {
+            return false
+        }
+        
+        const { capacidade_maxima, horario_abertura, horario_fechamento } = hospitalInfo[0]
+        
+        // Gerar datas do mês (apenas dias futuros)
+        const hoje = new Date()
+        const [ano, mes] = anoMes.split('-')
+        const ultimoDiaMes = new Date(ano, mes, 0).getDate()
+        
+        const diasDisponiveis = []
+        
+        for (let dia = 1; dia <= ultimoDiaMes; dia++) {
+            const dataAtual = new Date(ano, mes - 1, dia)
+            
+            // Pular dias passados
+            const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+            if (dataAtual < hojeSemHora) continue
+            
+            const dataStr = dataAtual.toISOString().split('T')[0]
+            
+            // Gerar slots de horário para o dia
+            const [horaAbertura, minutoAbertura] = horario_abertura.split(':').map(Number)
+            const [horaFechamento, minutoFechamento] = horario_fechamento.split(':').map(Number)
+            
+            let temVagaNodia = false
+            
+            // Iterar pelos slots do dia
+            for (let hora = horaAbertura; hora < horaFechamento; hora++) {
+                for (let minuto = 0; minuto < 60; minuto += slotMinutos) {
+                    // Se é a última hora, verificar se não passou do horário de fechamento
+                    if (hora === horaFechamento - 1 && minuto >= minutoFechamento) break
+                    
+                    const horaStr = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:00`
+                    
+                    // Se é hoje, pular horários passados
+                    if (dataAtual.toDateString() === hoje.toDateString()) {
+                        const agora = new Date()
+                        const horarioSlot = new Date(`${dataStr}T${horaStr}`)
+                        if (horarioSlot <= agora) continue
+                    }
+                    
+                    // Verificar disponibilidade do slot
+                    let sqlCount = `SELECT COUNT(*) as total 
+                                   FROM tbl_agendamento 
+                                   WHERE data = '${dataStr}' 
+                                   AND hora = '${horaStr}' 
+                                   AND id_hospital = ${hospitalId}`
+                    
+                    let countResult = await prisma.$queryRawUnsafe(sqlCount)
+                    
+                    if (countResult[0].total < capacidade_maxima) {
+                        temVagaNodia = true
+                        break
+                    }
+                }
+                if (temVagaNodia) break
+            }
+            
+            if (temVagaNodia) {
+                diasDisponiveis.push(dataStr)
+            }
+        }
+        
+        return diasDisponiveis
+        
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
+//============================== LISTAR HORÁRIOS DO DIA ==============================
+const selectHorariosDoDia = async function (hospitalId, data, slotMinutos = 60, retornarTodos = false) {
+    try {
+        // Buscar informações do hospital
+        let sqlHospital = `SELECT capacidade_maxima, horario_abertura, horario_fechamento 
+                          FROM tbl_hospital 
+                          WHERE id = ${hospitalId}`
+        
+        let hospitalInfo = await prisma.$queryRawUnsafe(sqlHospital)
+        
+        if (!hospitalInfo || hospitalInfo.length === 0) {
+            return false
+        }
+        
+        const { capacidade_maxima, horario_abertura, horario_fechamento } = hospitalInfo[0]
+        
+        const horarios = []
+        const hoje = new Date()
+        const dataSlot = new Date(data)
+        
+        // Gerar slots de horário
+        const [horaAbertura, minutoAbertura] = horario_abertura.split(':').map(Number)
+        const [horaFechamento, minutoFechamento] = horario_fechamento.split(':').map(Number)
+        
+        // Iterar pelos slots do dia
+        for (let hora = horaAbertura; hora < horaFechamento; hora++) {
+            for (let minuto = 0; minuto < 60; minuto += slotMinutos) {
+                // Se é a última hora, verificar se não passou do horário de fechamento
+                if (hora === horaFechamento - 1 && minuto >= minutoFechamento) break
+                
+                const horaStr = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:00`
+                
+                // Se é hoje, pular horários passados
+                if (dataSlot.toDateString() === hoje.toDateString()) {
+                    const horarioSlot = new Date(`${data}T${horaStr}`)
+                    if (horarioSlot <= hoje) continue
+                }
+                
+                // Contar agendamentos existentes
+                let sqlCount = `SELECT COUNT(*) as total 
+                               FROM tbl_agendamento 
+                               WHERE data = '${data}' 
+                               AND hora = '${horaStr}' 
+                               AND id_hospital = ${hospitalId}`
+                
+                let countResult = await prisma.$queryRawUnsafe(sqlCount)
+                const vagas = capacidade_maxima - countResult[0].total
+                
+                // Adicionar horário baseado no parâmetro retornarTodos
+                if (retornarTodos || vagas > 0) {
+                    horarios.push({
+                        hora: horaStr,
+                        vagas: vagas
+                    })
+                }
+            }
+        }
+        
+        return horarios
+        
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
+//============================== INSERIR AGENDAMENTO TRANSACIONAL ==============================
+const insertAgendamentoTx = async function (userId, hospitalId, data, hora) {
+    try {
+        return await prisma.$transaction(async (tx) => {
+            // 1. Verificar se hospital existe e obter dados
+            let sqlHospital = `SELECT id, capacidade_maxima, horario_abertura, horario_fechamento 
+                              FROM tbl_hospital 
+                              WHERE id = ${hospitalId}`
+            
+            let hospitalInfo = await tx.$queryRawUnsafe(sqlHospital)
+            
+            if (!hospitalInfo || hospitalInfo.length === 0) {
+                throw new Error('HOSPITAL_NOT_FOUND')
+            }
+            
+            const { capacidade_maxima, horario_abertura, horario_fechamento } = hospitalInfo[0]
+            
+            // 2. Validar data e hora
+            const hoje = new Date()
+            const dataAgendamento = new Date(data)
+            const horaAgendamento = new Date(`1970-01-01T${hora}`)
+            const horaAbertura = new Date(`1970-01-01T${horario_abertura}`)
+            const horaFechamento = new Date(`1970-01-01T${horario_fechamento}`)
+            
+            // Validar se data não é passada
+            if (dataAgendamento < hoje.setHours(0, 0, 0, 0)) {
+                throw new Error('DATA_PASSADA')
+            }
+            
+            // Se é hoje, validar se hora é futura
+            if (dataAgendamento.toDateString() === hoje.toDateString()) {
+                const agendamentoCompleto = new Date(`${data}T${hora}`)
+                if (agendamentoCompleto <= new Date()) {
+                    throw new Error('HORA_PASSADA')
+                }
+            }
+            
+            // Validar se hora está dentro do horário de funcionamento
+            if (horaAgendamento < horaAbertura || horaAgendamento >= horaFechamento) {
+                throw new Error('FORA_HORARIO_FUNCIONAMENTO')
+            }
+            
+            // 3. Lock ordenado - selecionar hospital para padronizar ordem de bloqueio
+            await tx.$queryRawUnsafe(`SELECT id FROM tbl_hospital WHERE id = ${hospitalId} FOR UPDATE`)
+            
+            // 4. Recontar agendamentos para evitar overbooking
+            let sqlCount = `SELECT COUNT(*) as total 
+                           FROM tbl_agendamento 
+                           WHERE data = '${data}' 
+                           AND hora = '${hora}' 
+                           AND id_hospital = ${hospitalId}`
+            
+            let countResult = await tx.$queryRawUnsafe(sqlCount)
+            
+            if (countResult[0].total >= capacidade_maxima) {
+                throw new Error('SEM_VAGAS')
+            }
+            
+            // 5. Inserir agendamento
+            let sqlInsert = `INSERT INTO tbl_agendamento (
+                                status, data, hora, id_usuario, id_hospital
+                             ) VALUES (
+                                'Agendado', '${data}', '${hora}', ${userId}, ${hospitalId}
+                             )`
+            
+            await tx.$executeRawUnsafe(sqlInsert)
+            
+            // 6. Buscar agendamento criado
+            let sqlSelect = `SELECT * FROM tbl_agendamento 
+                            WHERE data = '${data}' 
+                            AND hora = '${hora}' 
+                            AND id_usuario = ${userId}
+                            AND id_hospital = ${hospitalId}
+                            ORDER BY id DESC LIMIT 1`
+            
+            let agendamentoCriado = await tx.$queryRawUnsafe(sqlSelect)
+            
+            return agendamentoCriado[0]
+        })
+        
+    } catch (error) {
+        console.log(error)
+        
+        // Retornar erros específicos
+        if (error.message === 'HOSPITAL_NOT_FOUND') return { error: 'HOSPITAL_NOT_FOUND' }
+        if (error.message === 'DATA_PASSADA') return { error: 'DATA_PASSADA' }
+        if (error.message === 'HORA_PASSADA') return { error: 'HORA_PASSADA' }
+        if (error.message === 'FORA_HORARIO_FUNCIONAMENTO') return { error: 'FORA_HORARIO_FUNCIONAMENTO' }
+        if (error.message === 'SEM_VAGAS') return { error: 'SEM_VAGAS' }
+        
+        return false
+    }
+}
+
+//============================== AGENDAMENTOS DO USUÁRIO ==============================
+const selectAgendamentosDoUsuario = async function (userId, somenteFuturos = false) {
+    try {
+        let whereClause = `WHERE a.id_usuario = ${userId}`
+        
+        if (somenteFuturos) {
+            const hoje = new Date().toISOString().split('T')[0]
+            const agora = new Date().toTimeString().split(' ')[0]
+            
+            whereClause += ` AND (a.data > '${hoje}' OR (a.data = '${hoje}' AND a.hora >= '${agora}'))`
+        }
+        
+        let sql = `
+            SELECT 
+                a.id,
+                a.status,
+                a.data,
+                a.hora,
+                h.nome as hospital_nome,
+                h.email as hospital_email,
+                h.telefone as hospital_telefone,
+                h.cep as hospital_cep
+            FROM tbl_agendamento a
+            LEFT JOIN tbl_hospital h ON a.id_hospital = h.id
+            ${whereClause}
+            ORDER BY a.data ASC, a.hora ASC
+        `
+        
+        let result = await prisma.$queryRawUnsafe(sql)
+        return result
+        
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
+//============================== CANCELAR AGENDAMENTO DO USUÁRIO ==============================
+const deleteAgendamentoDoUsuario = async function (agendamentoId, userId) {
+    try {
+        // Verificar se agendamento existe e pertence ao usuário
+        let sqlVerify = `SELECT id FROM tbl_agendamento 
+                        WHERE id = ${agendamentoId} 
+                        AND id_usuario = ${userId}`
+        
+        let agendamento = await prisma.$queryRawUnsafe(sqlVerify)
+        
+        if (!agendamento || agendamento.length === 0) {
+            return false
+        }
+        
+        // Deletar agendamento
+        let sqlDelete = `DELETE FROM tbl_agendamento 
+                        WHERE id = ${agendamentoId} 
+                        AND id_usuario = ${userId}`
+        
+        let result = await prisma.$executeRawUnsafe(sqlDelete)
+        return result > 0
+        
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
 module.exports = {
     insertAgendamento,
     updateAgendamento,
@@ -301,5 +611,11 @@ module.exports = {
     selectByDoacaoAgendamento,
     selectByHospitalAgendamento,
     selectByDataAgendamento,
-    verificarDisponibilidade
+    verificarDisponibilidade,
+    // Novas funções para tela de agendamento
+    selectDiasDisponiveis,
+    selectHorariosDoDia,
+    insertAgendamentoTx,
+    selectAgendamentosDoUsuario,
+    deleteAgendamentoDoUsuario
 }

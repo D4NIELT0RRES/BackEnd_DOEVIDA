@@ -18,7 +18,7 @@ const inserirHospital = async function (hospital, contentType) {
         if (
             !hospital.nome || hospital.nome.length > 70 ||
             !hospital.email || hospital.email.length > 100 ||
-            !hospital.senha || hospital.senha.length > 20 ||
+            !hospital.senha || hospital.senha.length > 255 ||
             !hospital.cnpj || hospital.cnpj.length > 20 ||
             !hospital.crm ||
             !hospital.cep || hospital.cep.length > 10 ||
@@ -59,7 +59,7 @@ const atualizarHospital = async function (hospital, id, contentType) {
             !id || isNaN(id) || id <= 0 ||
             !hospital.nome || hospital.nome.length > 70 ||
             !hospital.email || hospital.email.length > 100 ||
-            !hospital.senha || hospital.senha.length > 20 ||
+            !hospital.senha || hospital.senha.length > 255 ||
             !hospital.cnpj || hospital.cnpj.length > 20 ||
             !hospital.crm ||
             !hospital.cep || hospital.cep.length > 10 ||
