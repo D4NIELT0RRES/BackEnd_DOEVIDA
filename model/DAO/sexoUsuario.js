@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Inserir um novo sexo de usuário
 const insertSexoUsuario = async function (sexoUsuario) {
     try {
         let sql = `
@@ -34,7 +34,7 @@ const insertSexoUsuario = async function (sexoUsuario) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um sexo de usuário existente pelo ID
 const updateSexoUsuario = async function (sexoUsuario, id) {
     try {
         let sql = `
@@ -51,7 +51,7 @@ const updateSexoUsuario = async function (sexoUsuario, id) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um sexo de usuário pelo ID
 const deleteSexoUsuario = async function (id) {
     try {
         let sql = `DELETE FROM tbl_sexo WHERE id = ${id};`
@@ -63,7 +63,7 @@ const deleteSexoUsuario = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os sexos de usuário
 const selectAllSexoUsuario = async function () {
     try {
         let sql = `SELECT * FROM tbl_sexo ORDER BY id ASC`
@@ -75,7 +75,7 @@ const selectAllSexoUsuario = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar sexo de usuário por ID
 const selectByIdSexoUsuario = async function (id) {
     try {
         let sql = `SELECT * FROM tbl_sexo WHERE id = ${id};`
@@ -87,7 +87,7 @@ const selectByIdSexoUsuario = async function (id) {
     }
 }
 
-//============================== BUSCAR POR NOME ==============================
+//Listar sexo de usuário por nome
 const selectByNomeSexoUsuario = async function (nome) {
     try {
         let sql = `SELECT * FROM tbl_sexo WHERE sexo = '${nome}';`

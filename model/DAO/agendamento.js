@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Insere um novo agendamento
 const insertAgendamento = async function (agendamento) {
     try {
         let sql = `INSERT INTO tbl_agendamento (
@@ -45,7 +45,7 @@ const insertAgendamento = async function (agendamento) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualiza um agendamento
 const updateAgendamento = async function (agendamento) {
     try {
         if (!agendamento.id) return false  // Garante que não atualiza sem ID
@@ -73,7 +73,7 @@ const updateAgendamento = async function (agendamento) {
     }
 }
 
-//============================== DELETAR ==============================
+//Exclui um agendamento por ID
 const deleteAgendamento = async function (id) {
     try {
         if (!id) return false
@@ -86,7 +86,7 @@ const deleteAgendamento = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os agendamentos
 const selectAllAgendamento = async function () {
     try {
         let sql = `SELECT * FROM tbl_agendamento ORDER BY data ASC, hora ASC`
@@ -98,7 +98,7 @@ const selectAllAgendamento = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar agendamento por ID
 const selectByIdAgendamento = async function (id) {
     try {
         if (!id) return false
@@ -111,7 +111,7 @@ const selectByIdAgendamento = async function (id) {
     }
 }
 
-//============================== BUSCAR POR STATUS ==============================
+//Listar agendamentos por status
 const selectByStatusAgendamento = async function (status) {
     try {
         // Validar se o status é válido
@@ -183,7 +183,7 @@ const selectByStatusAgendamento = async function (status) {
     }
 }
 
-//============================== BUSCAR POR USUÁRIO ==============================
+//Listar agendamentos por usuário
 const selectByUsuarioAgendamento = async function (id_usuario) {
     try {
         let sql = `SELECT * FROM tbl_agendamento WHERE id_usuario = ${id_usuario}`
@@ -195,7 +195,7 @@ const selectByUsuarioAgendamento = async function (id_usuario) {
     }
 }
 
-//============================== BUSCAR POR DOAÇÃO ==============================
+//Listar agendamentos por doação
 const selectByDoacaoAgendamento = async function (id_doacao) {
     try {
         let sql = `SELECT * FROM tbl_agendamento WHERE id_doacao = ${id_doacao}`
@@ -207,7 +207,7 @@ const selectByDoacaoAgendamento = async function (id_doacao) {
     }
 }
 
-//============================== BUSCAR POR HOSPITAL ==============================
+//Buscar por hospital por agendamento
 const selectByHospitalAgendamento = async function (id_hospital) {
     try {
         let sql = `SELECT * FROM tbl_agendamento WHERE id_hospital = ${id_hospital}`
@@ -219,7 +219,7 @@ const selectByHospitalAgendamento = async function (id_hospital) {
     }
 }
 
-//============================== BUSCAR POR DATA ==============================
+//Listar agendamentos por data, com detalhes do usuário, doação e hospital
 const selectByDataAgendamento = async function (data) {
     try {
         let sql = `
@@ -262,7 +262,7 @@ const selectByDataAgendamento = async function (data) {
     }
 }
 
-//============================== VERIFICAR DISPONIBILIDADE ==============================
+//Verificar disponibilidade de agendamento em um horário específico
 const verificarDisponibilidade = async function (data, hora, id_hospital) {
     try {
         let sql = `SELECT COUNT(*) as total 
@@ -290,9 +290,7 @@ const verificarDisponibilidade = async function (data, hora, id_hospital) {
     }
 }
 
-//============================== NOVAS FUNÇÕES PARA TELA DE AGENDAMENTO ==============================
-
-//============================== LISTAR DIAS DISPONÍVEIS ==============================
+//Listar dias disponíveis no mês para agendamento
 const selectDiasDisponiveis = async function (hospitalId, anoMes, slotMinutos = 60) {
     try {
         // Buscar informações do hospital
@@ -379,7 +377,7 @@ const selectDiasDisponiveis = async function (hospitalId, anoMes, slotMinutos = 
     }
 }
 
-//============================== LISTAR HORÁRIOS DO DIA ==============================
+//Listar horários disponíveis em um dia específico para agendamento
 const selectHorariosDoDia = async function (hospitalId, data, slotMinutos = 60, retornarTodos = false) {
     try {
         // Buscar informações do hospital
@@ -449,7 +447,7 @@ const selectHorariosDoDia = async function (hospitalId, data, slotMinutos = 60, 
     }
 }
 
-//============================== INSERIR AGENDAMENTO TRANSACIONAL ==============================
+//Listar agendamento com transação para evitar overbooking
 const insertAgendamentoTx = async function (userId, hospitalId, data, hora) {
     try {
         return await prisma.$transaction(async (tx) => {
@@ -544,7 +542,7 @@ const insertAgendamentoTx = async function (userId, hospitalId, data, hora) {
     }
 }
 
-//============================== AGENDAMENTOS DO USUÁRIO ==============================
+//Listar agendamentos de um usuário, com opção de filtrar apenas futuros
 const selectAgendamentosDoUsuario = async function (userId, somenteFuturos = false) {
     try {
         let whereClause = `WHERE a.id_usuario = ${userId}`
@@ -581,7 +579,7 @@ const selectAgendamentosDoUsuario = async function (userId, somenteFuturos = fal
     }
 }
 
-//============================== CANCELAR AGENDAMENTO DO USUÁRIO ==============================
+//Deletar agendamento de um usuário, garantindo que pertence a ele
 const deleteAgendamentoDoUsuario = async function (agendamentoId, userId) {
     try {
         // Verificar se agendamento existe e pertence ao usuário
@@ -621,7 +619,6 @@ module.exports = {
     selectByHospitalAgendamento,
     selectByDataAgendamento,
     verificarDisponibilidade,
-    // Novas funções para tela de agendamento
     selectDiasDisponiveis,
     selectHorariosDoDia,
     insertAgendamentoTx,

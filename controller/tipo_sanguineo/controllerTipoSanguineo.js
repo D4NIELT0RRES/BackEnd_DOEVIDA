@@ -8,7 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const tipoSanguineoDAO = require('../../model/DAO/tipo_sanguineo')
 
-//============================== INSERIR ==============================
+//Inserir um novo tipo sanguíneo
 const inserirTipoSanguineo = async function (dados, contentType) {
     try {
         if (contentType === 'application/json') {
@@ -35,7 +35,7 @@ const inserirTipoSanguineo = async function (dados, contentType) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar tipo sanguíneo
 const atualizarTipoSanguineo = async function (id, dados, contentType) {
     try {
         if (contentType === 'application/json') {
@@ -61,7 +61,7 @@ const atualizarTipoSanguineo = async function (id, dados, contentType) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar tipo sanguíneo pelo ID
 const excluirTipoSanguineo = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
@@ -81,7 +81,7 @@ const excluirTipoSanguineo = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os tipos sanguíneos
 const listarTiposSanguineos = async function () {
     try {
         let result = await tipoSanguineoDAO.selectAllTipos()
@@ -105,7 +105,7 @@ const listarTiposSanguineos = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Buscar tipo sanguíneo pelo ID
 const buscarTipoSanguineo = async function (id) {
     try {
         if (!id || isNaN(id)) {

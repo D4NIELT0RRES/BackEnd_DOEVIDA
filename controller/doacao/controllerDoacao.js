@@ -8,7 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const doacaoDAO = require('../../model/DAO/doacao')
 
-// Inserir nova doação
+//Inserir nova doação
 const inserirDoacao = async function(doacao, contentType) {
     try {
         if(contentType === 'application/json') {
@@ -35,7 +35,7 @@ const inserirDoacao = async function(doacao, contentType) {
     }
 }
 
-// Atualizar doação
+//Atualizar doação
 const atualizarDoacao = async function(doacao, id, contentType) {
     try {
         if(contentType === 'application/json') {
@@ -68,7 +68,7 @@ const atualizarDoacao = async function(doacao, id, contentType) {
     }
 }
 
-// Deletar doação
+//Deletar doação
 const excluirDoacao = async function(id) {
     try {
         if(!id || isNaN(id) || id <= 0) {
@@ -88,7 +88,7 @@ const excluirDoacao = async function(id) {
     }
 }
 
-// Listar todas as doações
+//Listar todas as doações
 const listarDoacao = async function() {
     try {
         let resultDoacao = await doacaoDAO.selectAllDoacao()
@@ -108,7 +108,7 @@ const listarDoacao = async function() {
     }
 }
 
-// Buscar doação pelo ID
+//Buscar doação pelo ID
 const buscarDoacao = async function(id) {
     try {
         if(!id || isNaN(id) || id <= 0) {
@@ -131,7 +131,7 @@ const buscarDoacao = async function(id) {
     }
 }
 
-// Histórico de doações do usuário
+//Histórico de doações do usuário
 const historicoDoacao = async function(idUsuario) {
     try {
         if(!idUsuario || isNaN(idUsuario) || idUsuario <= 0) {

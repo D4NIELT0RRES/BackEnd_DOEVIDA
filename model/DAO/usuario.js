@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Inserir um novo usuário
 const insertUsuario = async function (usuario) {
     try {
         let sqlInsert = `
@@ -85,7 +85,7 @@ const insertUsuario = async function (usuario) {
 };
 
 
-//============================== ATUALIZAR ==============================
+//Atualizar um usuário existente pelo ID
 const updateUsuario = async function (usuario) {
     try {
         let sql = `
@@ -130,8 +130,7 @@ const updateSenha = async (idUsuario, senhaHash) => {
   }
 }
 
-
-//============================== DELETAR ==============================
+//Deletar um usuário pelo ID
 const deleteUsuario = async function (id) {
     try {
         let sql = `DELETE FROM tbl_usuario WHERE id = ${id}`
@@ -143,7 +142,7 @@ const deleteUsuario = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os usuários
 const selectAllUsuario = async function () {
     try {
         let sql = `
@@ -179,8 +178,7 @@ const selectAllUsuario = async function () {
     }
 }
 
-
-//============================== BUSCAR POR ID ==============================
+//Buscar usuário pelo ID
 const selectByIdUsuario = async function (id) {
     try {
         let sql = `
@@ -210,7 +208,7 @@ const selectByIdUsuario = async function (id) {
     }
 }
 
-//============================== BUSCAR POR EMAIL ==============================
+//Buscar usuário pelo email
 const selectByEmailUsuario = async function (email) {
     try {
         let sql = `
@@ -240,7 +238,7 @@ const selectByEmailUsuario = async function (email) {
     }
 }
 
-//============================== BUSCAR POR NOME ==============================
+//Buscar usuário pelo NOME
 const selectByNomeUsuario = async function (nome) {
     try {
         let sql = `
@@ -270,7 +268,7 @@ const selectByNomeUsuario = async function (nome) {
     }
 }
 
-//============================== LOGIN ==============================
+//Fazer login do usuário (por email ou nome)
 const loginUsuario = async function (dadosLogin) {
     try {
         let sql = `

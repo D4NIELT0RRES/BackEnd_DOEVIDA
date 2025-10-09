@@ -8,7 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const bancoSangueDAO = require('../../model/DAO/banco_sangue')
 
-//============================== INSERIR ==============================
+//Inserir um novo banco de sangue
 const inserirBancoSangue = async function (bancoSangue, contentType) {
     try {
         if (contentType == 'application/json') {
@@ -39,7 +39,7 @@ const inserirBancoSangue = async function (bancoSangue, contentType) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um banco de sangue existente pelo ID
 const atualizarBancoSangue = async function (bancoSangue, id, contentType) {
     try {
         if (contentType == 'application/json') {
@@ -75,7 +75,7 @@ const atualizarBancoSangue = async function (bancoSangue, id, contentType) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um banco de sangue pelo ID
 const excluirBancoSangue = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
@@ -95,7 +95,7 @@ const excluirBancoSangue = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os bancos de sangue
 const listarBancoSangue = async function () {
     try {
         let result = await bancoSangueDAO.selectAllBancoSangue()
@@ -119,7 +119,7 @@ const listarBancoSangue = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Buscar banco de sangue pelo ID
 const buscarBancoSangue = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
@@ -142,7 +142,7 @@ const buscarBancoSangue = async function (id) {
     }
 }
 
-//============================== BUSCAR POR TIPO SANGUÍNEO ==============================
+//Buscar banco de sangue pelo tipo sanguíneo
 const buscarBancoSanguePorTipo = async function (id_tipo) {
     try {
         if (!id_tipo || isNaN(id_tipo)) {

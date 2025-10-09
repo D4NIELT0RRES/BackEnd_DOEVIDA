@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Inserir um novo certificado
 const insertCertificado = async function (certificado) {
     try {
         let sql = `INSERT INTO tbl_certificado (
@@ -39,7 +39,7 @@ const insertCertificado = async function (certificado) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um certificado existente pelo ID
 const updateCertificado = async function (certificado) {
     try {
         let sql = `UPDATE tbl_certificado SET 
@@ -56,7 +56,7 @@ const updateCertificado = async function (certificado) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um certificado pelo ID
 const deleteCertificado = async function (id) {
     try {
         let sql = `DELETE FROM tbl_certificado WHERE id = ${id}`
@@ -68,7 +68,7 @@ const deleteCertificado = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os certificados
 const selectAllCertificado = async function () {
     try {
         let sql = `SELECT * FROM tbl_certificado ORDER BY id ASC`
@@ -80,7 +80,7 @@ const selectAllCertificado = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar certificado por ID
 const selectByIdCertificado = async function (id) {
     try {
         let sql = `SELECT * FROM tbl_certificado WHERE id = ${id}`
@@ -92,7 +92,7 @@ const selectByIdCertificado = async function (id) {
     }
 }
 
-//============================== BUSCAR POR TÍTULO ==============================
+//Listar certificado por título
 const selectByTituloCertificado = async function (titulo) {
     try {
         let sql = `SELECT * FROM tbl_certificado WHERE titulo = '${titulo}'`
@@ -104,7 +104,7 @@ const selectByTituloCertificado = async function (titulo) {
     }
 }
 
-//============================== BUSCAR POR ORGANIZAÇÃO ==============================
+//Listar certificado por organização
 const selectByOrganizacaoCertificado = async function (organizacao) {
     try {
         let sql = `SELECT * FROM tbl_certificado WHERE organizacao = '${organizacao}'`

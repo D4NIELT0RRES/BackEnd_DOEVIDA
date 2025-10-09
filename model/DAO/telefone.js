@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Inserir um novo telefone
 const insertTelefone = async function (telefone) {
     try {
         let sql = `
@@ -39,7 +39,7 @@ const insertTelefone = async function (telefone) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um telefone existente pelo ID
 const updateTelefone = async function (telefone, id) {
     try {
         let sql = `
@@ -57,7 +57,7 @@ const updateTelefone = async function (telefone, id) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um telefone pelo ID
 const deleteTelefone = async function (id) {
     try {
         let sql = `DELETE FROM tbl_telefone WHERE id = ${id};`
@@ -69,7 +69,7 @@ const deleteTelefone = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os telefones
 const selectAllTelefone = async function () {
     try {
         let sql = `SELECT * FROM tbl_telefone ORDER BY id ASC`
@@ -81,7 +81,7 @@ const selectAllTelefone = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar telefone por ID
 const selectByIdTelefone = async function (id) {
     try {
         let sql = `SELECT * FROM tbl_telefone WHERE id = ${id};`
@@ -93,7 +93,7 @@ const selectByIdTelefone = async function (id) {
     }
 }
 
-//============================== BUSCAR POR NÚMERO ==============================
+//Listar telefone por NÚMERO
 const selectByNumeroTelefone = async function (numero) {
     try {
         let sql = `SELECT * FROM tbl_telefone WHERE numero = '${numero}';`
@@ -105,7 +105,7 @@ const selectByNumeroTelefone = async function (numero) {
     }
 }
 
-//============================== BUSCAR POR TIPO ==============================
+//Listar telefone por TIPO
 const selectByTipoTelefone = async function (tipo) {
     try {
         let sql = `SELECT * FROM tbl_telefone WHERE tipo = '${tipo}';`

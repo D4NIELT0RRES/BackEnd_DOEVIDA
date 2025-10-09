@@ -8,7 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const telefoneDAO = require('../../model/DAO/telefone')
 
-//============================== INSERIR ==============================
+//Inserir um novo telefone
 const inserirTelefone = async function(telefone, contentType) {
     try {
         if(contentType === 'application/json') {
@@ -38,7 +38,7 @@ const inserirTelefone = async function(telefone, contentType) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um telefone existente
 const atualizarTelefone = async function(telefone, id, contentType) {
     try {
         if(contentType === 'application/json') {
@@ -73,7 +73,7 @@ const atualizarTelefone = async function(telefone, id, contentType) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um telefone pelo ID
 const excluirTelefone = async function(id) {
     try {
         if(!id || isNaN(id) || id <= 0) {
@@ -92,7 +92,7 @@ const excluirTelefone = async function(id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os telefones
 const listarTelefone = async function() {
     try {
         let dadosTelefone = {}
@@ -113,7 +113,7 @@ const listarTelefone = async function() {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Buscar telefone pelo ID
 const buscarTelefone = async function(id) {
     try {
         if(!id || isNaN(id) || id <= 0) {
@@ -135,7 +135,7 @@ const buscarTelefone = async function(id) {
     }
 }
 
-//============================== BUSCAR POR NÚMERO ==============================
+//Buscar telefone pelo número
 const buscarTelefonePorNumero = async function(numero) {
     try {
         if(!numero || numero.length > 15) {
@@ -157,7 +157,7 @@ const buscarTelefonePorNumero = async function(numero) {
     }
 }
 
-//============================== BUSCAR POR TIPO ==============================
+//Buscar telefone pelo tipo
 const buscarTelefonePorTipo = async function(tipo) {
     try {
         if(!tipo || tipo.length > 30) {

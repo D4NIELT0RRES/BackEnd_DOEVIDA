@@ -11,7 +11,7 @@ const viaCep = require('../../viaCep.js')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
-//============================== INSERIR ==============================
+//Inserir um novo usuário
 const inserirUsuario = async function(dadosUsuario, contentType){
     try{
         if(String(contentType).toLowerCase() !== 'application/json'){
@@ -72,7 +72,7 @@ const inserirUsuario = async function(dadosUsuario, contentType){
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um usuário existente
 const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
     try{
         if(String(contentType).toLowerCase() !== 'application/json'){
@@ -129,8 +129,7 @@ const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
     }
 }
 
-
-//============================== EXCLUIR ==============================
+//Deletar um usuário pelo ID
 const excluirUsuario = async function(idUsuario){
     try{
         if(!idUsuario || isNaN(idUsuario)){
@@ -156,7 +155,7 @@ const excluirUsuario = async function(idUsuario){
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os usuários
 const listarUsuarios = async function(){
     try{
         const usuarios = await usuarioDAO.selectAllUsuario()
@@ -178,8 +177,7 @@ const listarUsuarios = async function(){
     }
 }
 
-
-//============================== BUSCAR POR ID ==============================
+//Buscar usuário pelo ID
 const buscarUsuario = async function(idUsuario){
     try{
         if(!idUsuario || isNaN(idUsuario)){
@@ -204,7 +202,7 @@ const buscarUsuario = async function(idUsuario){
     }
 }
 
-//============================== LOGIN ==============================
+//Login de um usuário
 const loginUsuario = async function (dadosLogin, contentType) {
     try {
         if (String(contentType).toLowerCase() !== 'application/json') {

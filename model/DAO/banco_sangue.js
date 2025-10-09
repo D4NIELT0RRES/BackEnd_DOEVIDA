@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Inserir um novo banco de sangue
 const insertBancoSangue = async function (bancoSangue) {
     try {
         let sql = `
@@ -43,7 +43,7 @@ const insertBancoSangue = async function (bancoSangue) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um banco de sangue existente pelo ID
 const updateBancoSangue = async function (bancoSangue, id) {
     try {
         let sql = `
@@ -62,7 +62,7 @@ const updateBancoSangue = async function (bancoSangue, id) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um banco de sangue pelo ID
 const deleteBancoSangue = async function (id) {
     try {
         let sql = `DELETE FROM tbl_banco_sangue WHERE id = ${id}`
@@ -74,7 +74,7 @@ const deleteBancoSangue = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os bancos de sangue
 const selectAllBancoSangue = async function () {
     try {
         let sql = `
@@ -91,7 +91,7 @@ const selectAllBancoSangue = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar banco de sangue por ID
 const selectByIdBancoSangue = async function (id) {
     try {
         let sql = `
@@ -109,7 +109,7 @@ const selectByIdBancoSangue = async function (id) {
     }
 }
 
-//============================== BUSCAR POR TIPO SANGUÍNEO ==============================
+//Listar banco de sangue por tipo sanguíneo
 const selectByTipoSanguineo = async function (id_tipo) {
     try {
         let sql = `

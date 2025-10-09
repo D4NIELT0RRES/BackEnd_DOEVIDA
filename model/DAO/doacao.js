@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Insere uma nova doação
 const insertDoacao = async function (doacao) {
     try {
         let sql = `
@@ -43,7 +43,7 @@ const insertDoacao = async function (doacao) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar uma doação existente pelo ID
 const updateDoacao = async function (doacao, id) {
     try {
         let sql = `
@@ -63,7 +63,7 @@ const updateDoacao = async function (doacao, id) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar uma doação existente pelo ID
 const deleteDoacao = async function (id) {
     try {
         let sql = `DELETE FROM tbl_doacao WHERE id = ${id};`
@@ -75,7 +75,7 @@ const deleteDoacao = async function (id) {
     }
 }
 
-//============================== LISTAR TODAS ==============================
+//Listar todas as doações
 const selectAllDoacao = async function () {
     try {
         let sql = `SELECT * FROM tbl_doacao ORDER BY id ASC;`
@@ -87,7 +87,7 @@ const selectAllDoacao = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar doação por ID
 const selectByIdDoacao = async function (id) {
     try {
         let sql = `SELECT * FROM tbl_doacao WHERE id = ${id};`
@@ -99,7 +99,7 @@ const selectByIdDoacao = async function (id) {
     }
 }
 
-//============================== HISTÓRICO DE DOAÇÕES ==============================
+//Listar doação por ID do usuário
 const historicoDoacao = async function (id_usuario) {
     try {
         let sql = `
@@ -122,7 +122,7 @@ const historicoDoacao = async function (id_usuario) {
     }
 }
 
-//============================== VERIFICAR COMPATIBILIDADE ==============================
+//Verificar compatibilidade entre tipos sanguíneos
 const verificarCompatibilidade = async function (tipo_doador, tipo_receptor) {
     const compatibilidade = {
         'A+': ['A+', 'AB+'],

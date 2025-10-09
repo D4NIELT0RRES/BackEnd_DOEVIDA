@@ -8,7 +8,7 @@
 const MESSAGE = require('../../modulo/config.js')
 const sexoDAO = require('../../model/DAO/sexoUsuario')
 
-//============================== INSERIR ==============================
+//Inserir novo sexo
 const inserirSexo = async function (sexo, contentType) {
     try {
         if (contentType === 'application/json') {
@@ -34,7 +34,7 @@ const inserirSexo = async function (sexo, contentType) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar sexo
 const atualizarSexo = async function (sexo, id, contentType) {
     try {
         if (contentType === 'application/json') {
@@ -63,7 +63,7 @@ const atualizarSexo = async function (sexo, id, contentType) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar sexo pelo ID
 const excluirSexo = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
@@ -82,7 +82,7 @@ const excluirSexo = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os sexos
 const listarSexo = async function () {
     try {
         let resultSexo = await sexoDAO.selectAllSexoUsuario()
@@ -101,7 +101,7 @@ const listarSexo = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Buscar sexo pelo ID
 const buscarSexo = async function (id) {
     try {
         if (!id || isNaN(id) || id <= 0) {
@@ -123,7 +123,7 @@ const buscarSexo = async function (id) {
     }
 }
 
-//============================== BUSCAR POR NOME ==============================
+//Buscar sexo pelo nome
 const buscarSexoPorNome = async function (nome) {
     try {
         if (!nome) {

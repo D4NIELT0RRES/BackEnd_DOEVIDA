@@ -11,7 +11,7 @@ const controllerUsuario = require('../usuario/controllerUsuario.js')
 const controllerDoacao = require('../doacao/controllerDoacao.js')
 const controllerHospital = require('../hospital/controllerHospital.js')
 
-//============================== INSERIR ==============================
+//Inserir um novo agendamento
 const inserirAgendamento = async function(agendamento, contentType){
     try{
         if(contentType !== 'application/json'){
@@ -70,7 +70,7 @@ const inserirAgendamento = async function(agendamento, contentType){
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um agendamento existente pelo ID
 const atualizarAgendamento = async function(agendamento, id, contentType){
     try{
         if(contentType !== 'application/json'){
@@ -111,7 +111,7 @@ const atualizarAgendamento = async function(agendamento, id, contentType){
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um agendamento pelo ID
 const excluirAgendamento = async function(id){
     try{
         if(!id || isNaN(id) || id <= 0){
@@ -136,7 +136,7 @@ const excluirAgendamento = async function(id){
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os agendamentos
 const listarAgendamento = async function(){
     try{
         const resultAgendamento = await agendamentoDAO.selectAllAgendamento()
@@ -157,7 +157,7 @@ const listarAgendamento = async function(){
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Buscar agendamento pelo ID
 const buscarAgendamento = async function(id){
     try{
         if(!id || isNaN(id) || id <= 0){
@@ -181,7 +181,7 @@ const buscarAgendamento = async function(id){
     }
 }
 
-//============================== BUSCAR POR STATUS ==============================
+//Buscar agendamentos pelo status
 const buscarAgendamentoPorStatus = async function(status){
     try{
         if(!status) return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -203,7 +203,7 @@ const buscarAgendamentoPorStatus = async function(status){
     }
 }
 
-//============================== BUSCAR POR USUÁRIO ==============================
+//Buscar agendamento pelo usuário
 const buscarAgendamentoPorUsuario = async function(id_usuario){
     try{
         if(!id_usuario || isNaN(id_usuario)) return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -225,7 +225,7 @@ const buscarAgendamentoPorUsuario = async function(id_usuario){
     }
 }
 
-//============================== BUSCAR POR DOAÇÃO ==============================
+//Buscar agendamento pela doação
 const buscarAgendamentoPorDoacao = async function(id_doacao){
     try{
         if(!id_doacao || isNaN(id_doacao)) return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -247,7 +247,7 @@ const buscarAgendamentoPorDoacao = async function(id_doacao){
     }
 }
 
-//============================== BUSCAR POR HOSPITAL ==============================
+//Buscar agendamento pelo hospital
 const buscarAgendamentoPorHospital = async function(id_hospital){
     try{
         if(!id_hospital || isNaN(id_hospital)) return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -269,7 +269,7 @@ const buscarAgendamentoPorHospital = async function(id_hospital){
     }
 }
 
-//============================== BUSCAR POR DATA ==============================
+//Buscar agendamento pela data
 const buscarAgendamentoPorData = async function(data){
     try{
         if(!data) return MESSAGE.ERROR_REQUIRED_FIELDS
@@ -291,7 +291,7 @@ const buscarAgendamentoPorData = async function(data){
     }
 }
 
-//============================== VERIFICAR DISPONIBILIDADE ==============================
+//Verificar disponibilidade
 const verificarDisponibilidade = async function(data, hora, id_hospital){
     try{
         if(!data || !hora || !id_hospital || isNaN(id_hospital)){
@@ -314,9 +314,7 @@ const verificarDisponibilidade = async function(data, hora, id_hospital){
     }
 }
 
-//============================== NOVAS FUNÇÕES PARA TELA DE AGENDAMENTO ==============================
-
-//============================== LISTAR DIAS DISPONÍVEIS ==============================
+//Listar dias disponíveis
 const listarDiasDisponiveis = async function(hospitalId, mes, slotMinutos = 60){
     try{
         // Validação de parâmetros
@@ -375,7 +373,7 @@ const listarDiasDisponiveis = async function(hospitalId, mes, slotMinutos = 60){
     }
 }
 
-//============================== LISTAR HORÁRIOS DO DIA ==============================
+//Listar horários do dia
 const listarHorariosDoDia = async function(hospitalId, data, slotMinutos = 60, todos = false){
     try{
         // Validação de parâmetros
@@ -439,7 +437,7 @@ const listarHorariosDoDia = async function(hospitalId, data, slotMinutos = 60, t
     }
 }
 
-//============================== CRIAR AGENDAMENTO ==============================
+//Criar um agendamento
 const criarAgendamento = async function(dadosAgendamento, contentType, userId){
     try{
         if(contentType !== 'application/json'){
@@ -523,7 +521,7 @@ const criarAgendamento = async function(dadosAgendamento, contentType, userId){
     }
 }
 
-//============================== LISTAR MEUS AGENDAMENTOS ==============================
+//Listar meus agendamentos
 const listarMeusAgendamentos = async function(userId, futuros = false){
     try{
         if(!userId || isNaN(userId) || userId <= 0){
@@ -562,7 +560,7 @@ const listarMeusAgendamentos = async function(userId, futuros = false){
     }
 }
 
-//============================== CANCELAR MEU AGENDAMENTO ==============================
+//Cancelar meu agendamento
 const cancelarMeuAgendamento = async function(agendamentoId, userId){
     try{
         if(!agendamentoId || isNaN(agendamentoId) || agendamentoId <= 0){
@@ -615,7 +613,6 @@ module.exports = {
     buscarAgendamentoPorHospital,
     buscarAgendamentoPorData,
     verificarDisponibilidade,
-    // Novas funções para tela de agendamento
     listarDiasDisponiveis,
     listarHorariosDoDia,
     criarAgendamento,

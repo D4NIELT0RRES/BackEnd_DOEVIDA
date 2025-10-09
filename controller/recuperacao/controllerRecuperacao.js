@@ -12,7 +12,7 @@ const bcrypt = require('bcrypt')
 const crypto = require('crypto')
 const emailService = require('../../service/emailService.js')
 
-//============================== SOLICITAR RECUPERAÇÃO ==============================
+//Solicitar recuperação de senha
 const solicitarRecuperacao = async function(email, contentType) {
     try {
         if (String(contentType).toLowerCase() !== 'application/json') {
@@ -87,7 +87,7 @@ const solicitarRecuperacao = async function(email, contentType) {
     }
 }
 
-//============================== REDEFINIR SENHA ==============================
+//Redefinir senha
 const redefinirSenha = async function(codigo, novaSenha, contentType) {
     try {
         if (String(contentType).toLowerCase() !== 'application/json') {

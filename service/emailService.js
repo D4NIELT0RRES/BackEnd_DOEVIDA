@@ -7,7 +7,7 @@
 
 const nodemailer = require('nodemailer')
 
-// Configuração do transportador de email
+//Configuração do transportador de email
 const createTransporter = () => {
     // Detecta o provedor baseado no EMAIL_USER (quem ENVIA), não no destinatário
     const emailUser = process.env.EMAIL_USER
@@ -46,7 +46,7 @@ const createTransporter = () => {
     return nodemailer.createTransport(config)
 }
 
-//============================== ENVIAR EMAIL DE RECUPERAÇÃO ==============================
+//Envia email de recuperação de senha
 const enviarEmailRecuperacao = async (email, nomeUsuario, codigo) => {
     try {
         const transporter = createTransporter()

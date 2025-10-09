@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Insere um novo tipo sanguíneo
 const insertTipoSanguineo = async function (tipo) {
     try {
         let sql = `
@@ -33,7 +33,7 @@ const insertTipoSanguineo = async function (tipo) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um tipo sanguíneo existente pelo ID
 const updateTipoSanguineo = async function (id, tipo) {
     try {
         let sql = `
@@ -49,7 +49,7 @@ const updateTipoSanguineo = async function (id, tipo) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um tipo sanguíneo pelo ID
 const deleteTipoSanguineo = async function (id) {
     try {
         let sql = `DELETE FROM tbl_tipo_sanguineo WHERE id = ${id}`
@@ -61,7 +61,7 @@ const deleteTipoSanguineo = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os tipos sanguíneos
 const selectAllTipos = async function () {
     try {
         let sql = `SELECT * FROM tbl_tipo_sanguineo ORDER BY id ASC`
@@ -73,7 +73,7 @@ const selectAllTipos = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar tipo sanguíneo por ID
 const selectByIdTipo = async function (id) {
     try {
         let sql = `SELECT * FROM tbl_tipo_sanguineo WHERE id = ${id}`

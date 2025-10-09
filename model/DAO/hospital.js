@@ -8,7 +8,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//============================== INSERIR ==============================
+//Inserir um novo hospital
 const insertHospital = async function (hospital) {
     try {
         let sql = `INSERT INTO tbl_hospital(
@@ -56,7 +56,7 @@ const insertHospital = async function (hospital) {
     }
 }
 
-//============================== ATUALIZAR ==============================
+//Atualizar um hospital existente pelo ID
 const updateHospital = async function (hospital, id) {
     try {
         let sql = `UPDATE tbl_hospital SET
@@ -83,7 +83,7 @@ const updateHospital = async function (hospital, id) {
     }
 }
 
-//============================== DELETAR ==============================
+//Deletar um hospital pelo ID
 const deleteHospital = async function (id) {
     try {
         let sql = `DELETE FROM tbl_hospital WHERE id = ${id}`
@@ -95,7 +95,7 @@ const deleteHospital = async function (id) {
     }
 }
 
-//============================== LISTAR TODOS ==============================
+//Listar todos os hospitais
 const selectAllHospital = async function () {
     try {
         let sql = `SELECT * FROM tbl_hospital ORDER BY id ASC`
@@ -107,7 +107,7 @@ const selectAllHospital = async function () {
     }
 }
 
-//============================== BUSCAR POR ID ==============================
+//Listar hospital por ID
 const selectByIdHospital = async function (id) {
     try {
         let sql = `SELECT * FROM tbl_hospital WHERE id = ${id}`
@@ -119,7 +119,7 @@ const selectByIdHospital = async function (id) {
     }
 }
 
-//============================== BUSCAR POR EMAIL ==============================
+//Listar hospital por email
 const selectByEmailHospital = async function (email) {
     try {
         let sql = `SELECT * FROM tbl_hospital WHERE email = '${email}'`
@@ -131,7 +131,7 @@ const selectByEmailHospital = async function (email) {
     }
 }
 
-//============================== BUSCAR POR CNPJ ==============================
+//Listar hospital por CNPJ
 const selectByCnpjHospital = async function (cnpj) {
     try {
         let sql = `SELECT * FROM tbl_hospital WHERE cnpj = '${cnpj}'`
