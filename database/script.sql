@@ -398,3 +398,4 @@ SELECT * FROM tbl_usuario;
 SELECT * FROM tbl_tipo_sanguineo;
 SELECT * FROM tbl_banco_sangue;
 SELECT * FROM tbl_hospital;
+ALTER TABLE tbl_hospital MODIFY COLUMN foto MEDIUMTEXT;
