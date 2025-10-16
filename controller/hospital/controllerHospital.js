@@ -203,6 +203,29 @@ const buscarPorCnpj = async function (cnpj) {
     }
 }
 
+//Upload de imagem para hospital
+const uploadImagemHospital = async function (req) {
+    try {
+        if (!req.imageUrl) {
+            return {
+                status_code: 400,
+                message: "Nenhuma imagem foi processada"
+            }
+        }
+
+        return {
+            status_code: 200,
+            message: "Imagem processada com sucesso",
+            image_url: req.imageUrl,
+            filename: req.processedFile.filename,
+            size: req.processedFile.size
+        }
+    } catch (error) {
+        console.error("Erro uploadImagemHospital:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 module.exports = {
     inserirHospital,
     atualizarHospital,
@@ -210,5 +233,6 @@ module.exports = {
     listarHospital,
     buscarHospital,
     buscarPorEmail,
-    buscarPorCnpj
+    buscarPorCnpj,
+    uploadImagemHospital
 }

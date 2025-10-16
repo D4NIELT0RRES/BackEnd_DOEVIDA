@@ -30,6 +30,10 @@
 const express    = require('express')
 const cors       = require('cors')
 const bodyParser = require('body-parser')
+const path       = require('path')
+
+//Import do middleware de upload
+const { upload, processImage, cleanupOnError } = require('./middleware/upload')
 
 //Import das controllers para realizar o CRUD de dados
 const controllerAgendamento   = require('./controller/agendamento/controllerAgendamento')
@@ -62,6 +66,9 @@ app.use((request, response, next) =>{
     app.use(express.json())
     next()
 })
+
+// Configurar para servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 /*************************************************************************************************
  *                                      ENDPOINTS AGENDAMENTO
@@ -327,6 +334,13 @@ app.get('/v1/doacao/compatibilidade', cors(), async function(request, response) 
 /*************************************************************************************************
  *                                      ENDPOINTS HOSPITAL
  *************************************************************************************************/
+// Upload de imagem para hospital
+app.post('/v1/doevida/hospital/upload-image', cors(), upload.single('foto'), processImage, cleanupOnError, async function(request, response){
+    let result = await controllerHospital.uploadImagemHospital(request)
+    response.status(result.status_code)
+    response.json(result)
+})
+
 // Inserir novo hospital
 app.post('/v1/doevida/hospital', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
