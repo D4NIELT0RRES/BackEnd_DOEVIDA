@@ -38,16 +38,42 @@ const inserirUsuario = async function(dadosUsuario, contentType){
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
 
+        // Verificar se CPF já existe (se informado)
+        if (dadosUsuario.cpf) {
+            const cpfExistente = await usuarioDAO.selectByCpfUsuario(dadosUsuario.cpf)
+            if (cpfExistente) {
+                return {
+                    status: false,
+                    status_code: 409,
+                    message: "CPF já cadastrado no sistema"
+                }
+            }
+        }
+
+        // Verificar se email já existe
+        const emailExistente = await usuarioDAO.selectByEmailUsuario(dadosUsuario.email)
+        if (emailExistente) {
+            return {
+                status: false,
+                status_code: 409,
+                message: "Email já cadastrado no sistema"
+            }
+        }
+
         // Busca de endereço via CEP, se informado
         if(dadosUsuario.cep){
             const dadosEndereco = await viaCep.buscarCep(dadosUsuario.cep)
             if(dadosEndereco.erro){
-                return { status: false, status_code: 400, message: dadosEndereco.message }
+                // Log do erro mas não impede o cadastro
+                console.warn("Erro ao buscar CEP, continuando cadastro sem dados de endereço:", dadosEndereco.message)
+                // Remove o CEP inválido para não salvar no banco
+                dadosUsuario.cep = null
+            } else {
+                dadosUsuario.logradouro = dadosEndereco.logradouro
+                dadosUsuario.bairro = dadosEndereco.bairro
+                dadosUsuario.localidade = dadosEndereco.localidade
+                dadosUsuario.uf = dadosEndereco.uf
             }
-            dadosUsuario.logradouro = dadosEndereco.logradouro
-            dadosUsuario.bairro = dadosEndereco.bairro
-            dadosUsuario.localidade = dadosEndereco.localidade
-            dadosUsuario.uf = dadosEndereco.uf
         }
 
         // Gera hash da senha

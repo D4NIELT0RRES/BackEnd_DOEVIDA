@@ -268,6 +268,26 @@ const selectByNomeUsuario = async function (nome) {
     }
 }
 
+//Buscar usuário pelo CPF
+const selectByCpfUsuario = async function (cpf) {
+    try {
+        let sql = `
+            SELECT 
+                u.id,
+                u.nome,
+                u.email,
+                u.cpf
+            FROM tbl_usuario u
+            WHERE u.cpf = '${cpf}'
+        `
+        let result = await prisma.$queryRawUnsafe(sql)
+        return result.length > 0 ? result[0] : false
+    } catch (error) {
+        console.error("Erro na DAO selectByCpfUsuario:", error)
+        return false
+    }
+}
+
 //Fazer login do usuário (por email ou nome)
 const loginUsuario = async function (dadosLogin) {
     try {
@@ -313,6 +333,7 @@ module.exports = {
     selectByIdUsuario,
     selectByEmailUsuario,
     selectByNomeUsuario,
+    selectByCpfUsuario,
     loginUsuario,
     updateSenha
 }
