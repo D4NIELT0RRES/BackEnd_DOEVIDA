@@ -357,6 +357,13 @@ app.get('/v1/doevida/hospital', cors(), async function(request, response){
     response.json(result)
 })
 
+// Listar hospitais para aplicação mobile
+app.get('/v1/doevida/hospital/mobile', cors(), async function(request, response){
+    let result = await controllerHospital.listarHospital()
+    response.status(result.status_code)
+    response.json(result)
+})
+
 // Buscar um hospital por ID
 app.get('/v1/doevida/hospital/:id', cors(), async function(request, response){
     let id     = request.params.id
@@ -474,6 +481,25 @@ app.get('/v1/doevida/perfil', cors(), verificarToken, async (request, response) 
         message: "Acesso liberado!",
         usuario: request.user
     })
+})
+
+// Complementar dados do usuário logado
+app.patch('/v1/doevida/usuarios/me/complemento', cors(), bodyParserJson, verificarToken, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody = request.body
+    let userId = request.user.id
+    let result = await controllerUsuario.complementarDadosUsuario(dadosBody, userId, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Listar agendamentos do usuário logado (endpoint alternativo para mobile)
+app.get('/v1/doevida/usuarios/me/agendamentos', cors(), verificarToken, async function(request, response){
+    let userId = request.user.id
+    let futuros = request.query.futuros === '1'
+    let result = await controllerAgendamento.listarMeusAgendamentos(userId, futuros)
+    response.status(result.status_code)
+    response.json(result)
 })
 
 // Buscar um usuário por ID

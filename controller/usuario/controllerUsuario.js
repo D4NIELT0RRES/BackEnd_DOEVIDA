@@ -269,6 +269,88 @@ const loginUsuario = async function (dadosLogin, contentType) {
     }
 };
 
+//Complementar dados do usuário logado
+const complementarDadosUsuario = async function(dadosComplementares, userId, contentType){
+    try{
+        if(String(contentType).toLowerCase() !== 'application/json'){
+            return MESSAGE.ERROR_CONTENT_TYPE
+        }
+
+        if (!userId || isNaN(userId)) {
+            return MESSAGE.ERROR_REQUIRED_FIELDS
+        }
+
+        const usuarioExistente = await usuarioDAO.selectByIdUsuario(parseInt(userId))
+        if (!usuarioExistente) {
+            return MESSAGE.ERROR_NOT_FOUND
+        }
+
+        // Validações específicas para os campos complementares
+        if (dadosComplementares.cpf && String(dadosComplementares.cpf).length > 15) {
+            return { status: false, status_code: 400, message: "CPF inválido" }
+        }
+
+        if (dadosComplementares.cep && String(dadosComplementares.cep).length > 10) {
+            return { status: false, status_code: 400, message: "CEP inválido" }
+        }
+
+        if (dadosComplementares.data_nascimento && isNaN(Date.parse(dadosComplementares.data_nascimento))) {
+            return { status: false, status_code: 400, message: "Data de nascimento inválida" }
+        }
+
+        // Verificar se CPF já existe para outro usuário
+        if (dadosComplementares.cpf) {
+            const cpfExistente = await usuarioDAO.selectByCpfUsuario(dadosComplementares.cpf)
+            if (cpfExistente && cpfExistente.id !== parseInt(userId)) {
+                return {
+                    status: false,
+                    status_code: 409,
+                    message: "CPF já cadastrado para outro usuário"
+                }
+            }
+        }
+
+        // Busca de endereço via CEP, se informado
+        if(dadosComplementares.cep){
+            const dadosEndereco = await viaCep.buscarCep(dadosComplementares.cep)
+            if(dadosEndereco.erro){
+                return { status: false, status_code: 400, message: dadosEndereco.message }
+            }
+            dadosComplementares.logradouro = dadosEndereco.logradouro
+            dadosComplementares.bairro = dadosEndereco.bairro
+            dadosComplementares.localidade = dadosEndereco.localidade
+            dadosComplementares.uf = dadosEndereco.uf
+        }
+
+        // Preparar dados para atualização (mantém dados existentes)
+        const dadosParaAtualizar = {
+            ...usuarioExistente,
+            ...dadosComplementares,
+            id: parseInt(userId)
+        }
+
+        const usuarioAtualizado = await usuarioDAO.updateUsuario(dadosParaAtualizar)
+
+        if(usuarioAtualizado){
+            // Remove senha_hash da resposta
+            const { senha_hash, ...usuarioSemSenha } = usuarioAtualizado;
+            
+            return {
+                status: true,
+                status_code: 200,
+                message: "Dados complementares atualizados com sucesso",
+                usuario: usuarioSemSenha
+            }
+        } else {
+            return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+    }catch(error){
+        console.error("Erro no controller complementarDadosUsuario:", error)
+        return MESSAGE.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
 
 module.exports = {
     inserirUsuario,
@@ -276,5 +358,6 @@ module.exports = {
     excluirUsuario,
     listarUsuarios,
     buscarUsuario,
-    loginUsuario
+    loginUsuario,
+    complementarDadosUsuario
 }
