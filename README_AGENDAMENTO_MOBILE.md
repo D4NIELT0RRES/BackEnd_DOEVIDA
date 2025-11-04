@@ -199,7 +199,7 @@ Authorization: Bearer {token}
 
 ### Endpoint: Login
 ```http
-POST /v1/doevida/login
+POST /v1/doevida/usuarios/login
 Content-Type: application/json
 ```
 

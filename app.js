@@ -510,6 +510,14 @@ app.get('/v1/doevida/usuario/:id', cors(), async function(request, response){
     response.json(result)
 })
 
+// Buscar agendamentos de um usuário específico por ID
+app.get('/v1/doevida/usuarios/:id/agendamentos', cors(), async function(request, response){
+    let id     = request.params.id
+    let result = await controllerAgendamento.buscarAgendamentoPorUsuario(id)
+    response.status(result.status_code)
+    response.json(result)
+})
+
 // Excluir um usuário por ID
 app.delete('/v1/doevida/usuario/:id', cors(), async function(request, response){
     let id     = request.params.id
@@ -529,10 +537,29 @@ app.put('/v1/doevida/usuario/:id', cors(), bodyParserJson, async function(reques
 })
 
 // Login de usuário
-app.post('/v1/doevida/login', cors(), bodyParserJson, async function (request, response) {
+app.post('/v1/doevida/usuarios/login', cors(), bodyParserJson, async function (request, response) {
     let contentType = request.headers['content-type']
     let dadosBody   = request.body
     let result      = await controllerUsuario.loginUsuario(dadosBody, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Rota alternativa para cadastro (compatibilidade com mobile)
+app.post('/v1/doevida/usuarios', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerUsuario.inserirUsuario(dadosBody, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Rota alternativa para agendamento (compatibilidade com mobile)
+app.post('/v1/doevida/agendamentos', cors(), bodyParserJson, verificarToken, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody = request.body
+    let userId = request.user.id
+    let result = await controllerAgendamento.criarAgendamento(dadosBody, contentType, userId)
     response.status(result.status_code)
     response.json(result)
 })
@@ -549,8 +576,26 @@ app.post('/v1/doevida/recuperar-senha', cors(), bodyParserJson, async function(r
     response.json(result)
 })
 
+// Rota alternativa para recuperação de senha (compatibilidade com mobile)
+app.post('/v1/doevida/usuarios/recuperar-senha', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerRecuperacao.solicitarRecuperacao(dadosBody.email, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
 // Redefinir senha (recebe código + nova senha)
 app.post('/v1/doevida/redefinir-senha', cors(), bodyParserJson, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerRecuperacao.redefinirSenha(dadosBody.codigo, dadosBody.novaSenha, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Rota alternativa para redefinir senha (compatibilidade com mobile)
+app.post('/v1/doevida/usuarios/redefinir-senha', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
     let dadosBody   = request.body
     let result      = await controllerRecuperacao.redefinirSenha(dadosBody.codigo, dadosBody.novaSenha, contentType)

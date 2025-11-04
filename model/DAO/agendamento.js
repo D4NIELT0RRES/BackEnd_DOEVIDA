@@ -186,7 +186,19 @@ const selectByStatusAgendamento = async function (status) {
 //Listar agendamentos por usuário
 const selectByUsuarioAgendamento = async function (id_usuario) {
     try {
-        let sql = `SELECT * FROM tbl_agendamento WHERE id_usuario = ${id_usuario}`
+        let sql = `SELECT 
+                        a.id,
+                        a.status,
+                        a.data,
+                        a.hora,
+                        a.id_usuario,
+                        a.id_doacao,
+                        a.id_hospital,
+                        h.nome as nome_hospital
+                   FROM tbl_agendamento a
+                   INNER JOIN tbl_hospital h ON a.id_hospital = h.id
+                   WHERE a.id_usuario = ${id_usuario}
+                   ORDER BY a.data DESC, a.hora DESC`
         let result = await prisma.$queryRawUnsafe(sql)
         return result
     } catch (error) {
