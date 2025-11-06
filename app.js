@@ -545,6 +545,15 @@ app.post('/v1/doevida/usuarios/login', cors(), bodyParserJson, async function (r
     response.json(result)
 })
 
+// Login de usuário (endpoint para frontend)
+app.post('/v1/doevida/login', cors(), bodyParserJson, async function (request, response) {
+    let contentType = request.headers['content-type']
+    let dadosBody   = request.body
+    let result      = await controllerUsuario.loginUsuario(dadosBody, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
 // Rota alternativa para cadastro (compatibilidade com mobile)
 app.post('/v1/doevida/usuarios', cors(), bodyParserJson, async function(request, response){
     let contentType = request.headers['content-type']
