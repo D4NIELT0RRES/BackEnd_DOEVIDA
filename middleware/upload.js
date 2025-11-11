@@ -45,7 +45,9 @@ const processImage = async (req, res, next) => {
         }
 
         // Gerar nome único para o arquivo
-        const fileName = `hospital_${Date.now()}_${Math.round(Math.random() * 1E9)}.webp`
+        // Detectar o tipo de upload baseado na rota
+        const prefix = req.path.includes('comprovante') ? 'comprovante' : 'hospital'
+        const fileName = `${prefix}_${Date.now()}_${Math.round(Math.random() * 1E9)}.webp`
         const filePath = path.join(uploadsDir, fileName)
 
         // Processar a imagem com Sharp

@@ -36,16 +36,17 @@ const { logger, requestLogger } = require('./middleware/logger')
 const { validateUsuario, validateLogin, validateAgendamento, validateRecuperacaoEmail, validateRedefinirSenha, validateId } = require('./middleware/validator')
 
 //Import das controllers para realizar o CRUD de dados
-const controllerAgendamento   = require('./controller/agendamento/controllerAgendamento')
-const controllerEstoqueSangue = require('./controller/banco_de_sangue/controllerEstoqueSangue')
-const controllerCertificado   = require('./controller/certificado/controllerCertificado')
-const controllerDoacao        = require('./controller/doacao/controllerDoacao')
-const controllerHospital      = require('./controller/hospital/controllerHospital')
-const controllerSexo          = require('./controller/sexo/controllerSexo')
-const controllerTelefone      = require('./controller/telefone/controllerTelefone')
-const controllerUsuario       = require('./controller/usuario/controllerUsuario')
-const controllerTipoSanguineo = require('./controller/tipo_sanguineo/controllerTipoSanguineo')
-const controllerRecuperacao   = require('./controller/recuperacao/controllerRecuperacao')
+const controllerAgendamento     = require('./controller/agendamento/controllerAgendamento')
+const controllerEstoqueSangue   = require('./controller/banco_de_sangue/controllerEstoqueSangue')
+const controllerCertificado     = require('./controller/certificado/controllerCertificado')
+const controllerDoacao          = require('./controller/doacao/controllerDoacao')
+const controllerHospital        = require('./controller/hospital/controllerHospital')
+const controllerSexo            = require('./controller/sexo/controllerSexo')
+const controllerTelefone        = require('./controller/telefone/controllerTelefone')
+const controllerUsuario         = require('./controller/usuario/controllerUsuario')
+const controllerTipoSanguineo   = require('./controller/tipo_sanguineo/controllerTipoSanguineo')
+const controllerRecuperacao     = require('./controller/recuperacao/controllerRecuperacao')
+const controllerRegistroDoacao  = require('./controller/registro_doacao/controllerRegistroDoacao')
 
 //Import do arquivo de autenticação
 const verificarToken = require('./middleware/auth')
@@ -433,6 +434,78 @@ app.put('/v1/doevida/hospital/:id', async function(request, response){
     let id          = request.params.id
     let dadosBody   = request.body
     let result      = await controllerHospital.atualizarHospital(dadosBody, id, contentType)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+/*************************************************************************************************
+ *                                  ENDPOINTS REGISTRO DE DOAÇÃO
+ *************************************************************************************************/
+// Upload de comprovante de doação (protegido por autenticação)
+app.post('/v1/doevida/registro-doacao/upload-comprovante', verificarToken, upload.single('foto_comprovante'), processImage, cleanupOnError, async function(request, response){
+    let result = await controllerRegistroDoacao.uploadComprovanteDoacao(request)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Buscar dados do agendamento para pré-preencher formulário (protegido por autenticação)
+app.get('/v1/doevida/registro-doacao/dados-agendamento/:id_agendamento', verificarToken, async function(request, response){
+    let idAgendamento = request.params.id_agendamento
+    let userId = request.user.id
+    let result = await controllerRegistroDoacao.obterDadosAgendamento(idAgendamento, userId)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Criar novo registro de doação (protegido por autenticação)
+app.post('/v1/doevida/registro-doacao', verificarToken, async function(request, response){
+    let contentType = request.headers['content-type']
+    let dadosBody = request.body
+    let userId = request.user.id
+    let result = await controllerRegistroDoacao.inserirRegistroDoacao(dadosBody, contentType, userId)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Listar todos os registros de doação (sem autenticação - para admin)
+app.get('/v1/doevida/registro-doacao', async function(request, response){
+    let result = await controllerRegistroDoacao.listarRegistroDoacao()
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Buscar um registro de doação por ID
+app.get('/v1/doevida/registro-doacao/:id', async function(request, response){
+    let id = request.params.id
+    let result = await controllerRegistroDoacao.buscarRegistroDoacao(id)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Buscar histórico de registros do usuário logado (protegido por autenticação)
+app.get('/v1/doevida/registro-doacao/historico/me', verificarToken, async function(request, response){
+    let userId = request.user.id
+    let result = await controllerRegistroDoacao.historicoRegistroUsuario(userId)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Atualizar registro de doação (protegido por autenticação)
+app.put('/v1/doevida/registro-doacao/:id', verificarToken, async function(request, response){
+    let contentType = request.headers['content-type']
+    let id = request.params.id
+    let dadosBody = request.body
+    let userId = request.user.id
+    let result = await controllerRegistroDoacao.atualizarRegistroDoacao(dadosBody, id, contentType, userId)
+    response.status(result.status_code)
+    response.json(result)
+})
+
+// Excluir registro de doação (protegido por autenticação)
+app.delete('/v1/doevida/registro-doacao/:id', verificarToken, async function(request, response){
+    let id = request.params.id
+    let userId = request.user.id
+    let result = await controllerRegistroDoacao.excluirRegistroDoacao(id, userId)
     response.status(result.status_code)
     response.json(result)
 })

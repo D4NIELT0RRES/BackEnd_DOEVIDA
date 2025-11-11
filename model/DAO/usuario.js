@@ -11,6 +11,14 @@ const prisma = new PrismaClient()
 //Inserir um novo usuário
 const insertUsuario = async function (usuario) {
     try {
+        // Converter data_nascimento de string para Date se necessário
+        let dataNascimento = null
+        if (usuario.data_nascimento) {
+            dataNascimento = usuario.data_nascimento instanceof Date 
+                ? usuario.data_nascimento 
+                : new Date(usuario.data_nascimento)
+        }
+
         // Usar Prisma ORM com prepared statements - previne SQL Injection
         const result = await prisma.tbl_usuario.create({
             data: {
@@ -19,7 +27,7 @@ const insertUsuario = async function (usuario) {
                 senha_hash: usuario.senha_hash,
                 cpf: usuario.cpf || null,
                 cep: usuario.cep || null,
-                data_nascimento: usuario.data_nascimento || null,
+                data_nascimento: dataNascimento,
                 id_tipo_sanguineo: usuario.id_tipo_sanguineo || null,
                 logradouro: usuario.logradouro || null,
                 bairro: usuario.bairro || null,
@@ -74,6 +82,14 @@ const insertUsuario = async function (usuario) {
 //Atualizar um usuário existente pelo ID
 const updateUsuario = async function (usuario) {
     try {
+        // Converter data_nascimento de string para Date se necessário
+        let dataNascimento = null
+        if (usuario.data_nascimento) {
+            dataNascimento = usuario.data_nascimento instanceof Date 
+                ? usuario.data_nascimento 
+                : new Date(usuario.data_nascimento)
+        }
+
         // Usar Prisma ORM - previne SQL Injection
         const result = await prisma.tbl_usuario.update({
             where: { id: usuario.id },
@@ -88,7 +104,7 @@ const updateUsuario = async function (usuario) {
                 localidade: usuario.localidade || null,
                 uf: usuario.uf || null,
                 numero: usuario.numero || null,
-                data_nascimento: usuario.data_nascimento || null,
+                data_nascimento: dataNascimento,
                 foto_perfil: usuario.foto_perfil || null,
                 id_tipo_sanguineo: usuario.id_tipo_sanguineo || null,
                 id_sexo: usuario.id_sexo || null
