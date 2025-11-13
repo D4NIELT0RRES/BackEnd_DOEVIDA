@@ -23,7 +23,6 @@ jobs:
       - name: npm install, prisma generate, build, and test
         run: |
           npm install
-          # CORREÇÃO: A flag --no-warn-engine foi removida, pois não é válida.
           # Este comando gera o Prisma Client e corrige o erro MODULE_NOT_FOUND no Azure.
           npx prisma generate
           npm run build --if-present
@@ -34,14 +33,12 @@ jobs:
       # ----------------------------------------------------------------------------------
 
       # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco.
-      # O arquivo 'mysql_ca.pem' é necessário para a conexão SSL do Prisma.
       - name: Write Azure MySQL CA Certificate File
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
         run: echo "$CA_CERT" > mysql_ca.pem 
         
       # PASSO 2: Executa a migração (deploy).
-      # Garante que o banco de dados esteja atualizado antes do deploy da aplicação.
       - name: Run Prisma Deploy
         run: npx prisma migrate deploy
         env:
@@ -54,7 +51,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          # Empacota todo o diretório do projeto, incluindo o client gerado.
           path: .
 
   deploy:
@@ -66,7 +62,6 @@ jobs:
 
     steps:
       - name: Download artifact from build job
-        # Baixa o artefato que contém o Prisma Client gerado e o mysql_ca.pem.
         uses: actions/download-artifact@v4
         with:
           name: node-app
@@ -85,5 +80,4 @@ jobs:
         with:
           app-name: 'backend-doevida'
           slot-name: 'Production'
-          # Aponta para o diretório de deploy
           package: deploy_package
