@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
+          cache: 'npm'
 
       # CORREÇÃO: Criar certificado primeiro
       - name: Write Azure MySQL CA Certificate File
@@ -36,7 +37,6 @@ jobs:
           DB_URL: ${{ secrets.AZURE_DATABASE_URL }}
         run: |
           echo "Criando .env com configuração SSL..."
-          # CORREÇÃO: Método mais direto
           echo "DATABASE_URL=\"${DB_URL}?sslaccept=strict&ssl_ca=mysql_ca.pem\"" > .env
           echo "JWT_SECRET=uma_senha_super_segura" >> .env
           echo "JWT_EXPIRES=1h" >> .env
@@ -52,10 +52,24 @@ jobs:
       - name: npm install, prisma generate, build, and test
         run: |
           npm install
+          # CORREÇÃO: Garantir que Prisma Client seja gerado
           npx prisma generate
           npm run build --if-present
           npm run test --if-present
+        
+      - name: Run Prisma Deploy
+        run: |
+          echo "Executando migrações com SSL..."
+          npx prisma migrate deploy
+          echo "Migrações concluídas com sucesso!"
       
+      # CORREÇÃO: Verificar se o Prisma Client foi gerado
+      - name: Verify Prisma Client Generation
+        run: |
+          echo "Verificando geração do Prisma Client..."
+          ls -la node_modules/.prisma/client/
+          echo "Prisma Client verificado!"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -92,6 +106,15 @@ jobs:
           echo "EMAIL_HOST=smtp.gmail.com" >> .env
           echo "EMAIL_PORT=587" >> .env
           chmod 644 mysql_ca.pem
+
+      # CORREÇÃO CRÍTICA: Gerar Prisma Client NOVAMENTE no ambiente de deploy
+      - name: Generate Prisma Client for Production
+        run: |
+          echo "Gerando Prisma Client para produção..."
+          npm install
+          npx prisma generate
+          echo "Prisma Client gerado com sucesso!"
+          ls -la node_modules/.prisma/client/
 
       - name: Login to Azure
         uses: azure/login@v2
