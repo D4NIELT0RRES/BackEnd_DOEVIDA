@@ -8,6 +8,8 @@ USE db_doevida_tcc;
 
 drop database db_doevida_tcc;
 
+show tables;
+
 select * from tbl_tipo_sanguineo;
 -- =========================
 -- TABELA: Tipo Sanguíneo
@@ -260,6 +262,24 @@ CREATE TABLE tbl_agendamento (
     FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
 );
 
+-- =========================
+-- TABELA: Registro de Doação
+-- =========================
+CREATE TABLE tbl_registro_doacao (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_agendamento INT NOT NULL UNIQUE,
+    id_usuario INT NOT NULL,
+    id_hospital INT NOT NULL,
+    data_doacao DATE NOT NULL,
+    local_doacao VARCHAR(255) NOT NULL,
+    observacao TEXT NULL,
+    foto_comprovante VARCHAR(500) NULL,
+    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_agendamento) REFERENCES tbl_agendamento(id),
+    FOREIGN KEY (id_usuario) REFERENCES tbl_usuario(id),
+    FOREIGN KEY (id_hospital) REFERENCES tbl_hospital(id)
+);
+UPDATE tbl_agendamento SET status = 'Concluído' WHERE id = 1;
 -- =========================
 -- TABELA: Telefone
 -- =========================

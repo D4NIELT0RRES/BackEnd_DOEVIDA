@@ -51,6 +51,19 @@ const enviarEmailRecuperacao = async (email, nomeUsuario, codigo) => {
     try {
         const transporter = createTransporter()
 
+        // Verifica a conexão/configuração do transportador antes de enviar
+        // Isso ajuda a capturar problemas de autenticação ou configuração de SMTP
+        try {
+            await transporter.verify()
+        } catch (verifyError) {
+            console.error('Falha na verificação do transportador de e-mail:', verifyError)
+            return {
+                sucesso: false,
+                erro: verifyError.message,
+                message: 'Configuração de e-mail inválida. Verifique EMAIL_USER/EMAIL_PASS e as variáveis de SMTP.'
+            }
+        }
+
         const htmlTemplate = `
         <!DOCTYPE html>
         <html>
@@ -144,10 +157,10 @@ const enviarEmailRecuperacao = async (email, nomeUsuario, codigo) => {
         }
 
         const info = await transporter.sendMail(mailOptions)
-        
+
         console.log(`Email de recuperação enviado para: ${email}`)
         console.log(`Message ID: ${info.messageId}`)
-        
+
         return {
             sucesso: true,
             messageId: info.messageId,
@@ -155,11 +168,17 @@ const enviarEmailRecuperacao = async (email, nomeUsuario, codigo) => {
         }
 
     } catch (error) {
-        console.error('Erro ao enviar email de recuperação:', error)
+        // Log detalhado (stack) para ajudar no diagnóstico sem vazar credenciais
+        console.error('Erro ao enviar email de recuperação:', {
+            message: error.message,
+            stack: error.stack
+        })
+
+        // Retornar mensagem amigável; o controlador fará o log do erro quando receber o retorno
         return {
             sucesso: false,
             erro: error.message,
-            message: 'Erro ao enviar email'
+            message: 'Erro ao enviar email. Verifique configurações de SMTP e credenciais.'
         }
     }
 }

@@ -88,23 +88,31 @@ const insertUsuario = async function (usuario) {
 // Atualizar um usuário existente pelo ID
 const updateUsuario = async function (usuario) {
     try {
+        // Construir campos dinâmicos
+        let campos = [
+            `nome = '${usuario.nome}'`,
+            `email = '${usuario.email}'`,
+            `cpf = ${usuario.cpf ? `'${usuario.cpf}'` : 'NULL'}`,
+            `cep = ${usuario.cep ? `'${usuario.cep}'` : 'NULL'}`,
+            `logradouro = ${usuario.logradouro ? `'${usuario.logradouro}'` : 'NULL'}`,
+            `bairro = ${usuario.bairro ? `'${usuario.bairro}'` : 'NULL'}`,
+            `localidade = ${usuario.localidade ? `'${usuario.localidade}'` : 'NULL'}`,
+            `uf = ${usuario.uf ? `'${usuario.uf}'` : 'NULL'}`,
+            `numero = ${usuario.telefone ? `'${usuario.telefone}'` : 'NULL'}`,
+            `data_nascimento = ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'}`,
+            `foto_perfil = ${usuario.foto_perfil ? `'${usuario.foto_perfil}'` : 'NULL'}`,
+            `id_tipo_sanguineo = ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'}`,
+            `id_sexo = ${usuario.id_sexo ? usuario.id_sexo : 'NULL'}`
+        ]
+        
+        // Adicionar senha_hash apenas se fornecida
+        if (usuario.senha_hash && usuario.senha_hash !== 'undefined') {
+            campos.push(`senha_hash = '${usuario.senha_hash}'`)
+        }
+        
         let sql = `
             UPDATE tbl_usuario 
-            SET 
-                nome                = '${usuario.nome}',
-                email               = '${usuario.email}',
-                senha_hash          = '${usuario.senha_hash}',
-                cpf                 = ${usuario.cpf ? `'${usuario.cpf}'` : 'NULL'},
-                cep                 = ${usuario.cep ? `'${usuario.cep}'` : 'NULL'},
-                logradouro          = ${usuario.logradouro ? `'${usuario.logradouro}'` : 'NULL'},
-                bairro              = ${usuario.bairro ? `'${usuario.bairro}'` : 'NULL'},
-                localidade          = ${usuario.localidade ? `'${usuario.localidade}'` : 'NULL'},
-                uf                  = ${usuario.uf ? `'${usuario.uf}'` : 'NULL'},
-                numero              = ${usuario.telefone ? `'${usuario.telefone}'` : 'NULL'},
-                data_nascimento     = ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'},
-                foto_perfil         = ${usuario.foto_perfil ? `'${usuario.foto_perfil}'` : 'NULL'},
-                id_tipo_sanguineo   = ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'},
-                id_sexo             = ${usuario.id_sexo ? usuario.id_sexo : 'NULL'}
+            SET ${campos.join(', ')}
             WHERE id = ${usuario.id};
         `
         let result = await prisma.$executeRawUnsafe(sql)
