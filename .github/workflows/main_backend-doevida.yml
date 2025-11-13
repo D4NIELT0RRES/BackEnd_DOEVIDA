@@ -30,8 +30,6 @@ jobs:
       - name: Run Prisma Deploy
         run: npx prisma migrate deploy
         env:
-          # A DATABASE_URL deve ser injetada como um segredo do GitHub para manter a segurança.
-          # Você deve criar um Secret chamado AZURE_DATABASE_URL e colar a string de conexão COMPLETA lá.
           DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}
 
       - name: Upload artifact for deployment job
