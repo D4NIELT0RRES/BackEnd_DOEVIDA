@@ -19,6 +19,7 @@
 // Carregar variáveis de ambiente primeiro
 require('dotenv').config()
 
+//comentario de teste
 //Import das bibliotecas para criar a API
 const express    = require('express')
 const cors       = require('cors')

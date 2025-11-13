@@ -1,6 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
+﻿
 name: Build and deploy Node.js app to Azure Web App - backend-doevida
 
 on:
@@ -21,11 +19,12 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: npm install, build, and test
         run: |
           npm install
+          npx prisma generate
           npm run build --if-present
           npm run test --if-present
 
@@ -51,9 +50,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2AFBE9EE185A4AEA86A8EA0D069526DF }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E4558B550BA44947A89F4533C0DFF126 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_72B0BB0ADF6B482EBA7CB71BAEC42C3A }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_CEA0C2BCB16C4EB2BD6739EBDFB13F34 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_91B71513BAC648878DF1C473C312CAA8 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6136A3836DF449C48873D64D3BFD8BA5 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
