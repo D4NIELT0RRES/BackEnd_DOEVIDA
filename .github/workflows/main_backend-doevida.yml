@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - backend-doevida
+﻿name: Build and deploy Node.js app to Azure Web App - backend-doevida
 
 on:
   push:
@@ -21,22 +21,17 @@ jobs:
           node-version: '22.x'
           cache: 'npm'
 
-      # CORREÇÃO: Criar certificado primeiro
       - name: Write Azure MySQL CA Certificate File
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
         run: |
-          echo "Criando certificado CA..."
           echo "$CA_CERT" > mysql_ca.pem
           chmod 644 mysql_ca.pem
-          echo "Certificado criado com sucesso!"
 
-      # CORREÇÃO: Usar approach mais simples e confiável
-      - name: Create proper .env file
+      - name: Create .env file
         env:
           DB_URL: ${{ secrets.AZURE_DATABASE_URL }}
         run: |
-          echo "Criando .env com configuração SSL..."
           echo "DATABASE_URL=\"${DB_URL}?sslaccept=strict&ssl_ca=mysql_ca.pem\"" > .env
           echo "JWT_SECRET=uma_senha_super_segura" >> .env
           echo "JWT_EXPIRES=1h" >> .env
@@ -44,46 +39,23 @@ jobs:
           echo "EMAIL_PASS=gicx yjxf lwsb tmun" >> .env
           echo "EMAIL_HOST=smtp.gmail.com" >> .env
           echo "EMAIL_PORT=587" >> .env
-          
-          echo "=== CONTEÚDO VERIFICADO DO .env ==="
-          cat .env
-          echo "==================================="
 
-      - name: npm install, prisma generate, build, and test
+      - name: Install dependencies and generate Prisma
         run: |
           npm install
-          # CORREÇÃO: Garantir que Prisma Client seja gerado
           npx prisma generate
-          npm run build --if-present
-          npm run test --if-present
-        
-      # CORREÇÃO: Substituir por setup de database mais robusto
+
       - name: Setup Database
         run: |
-          echo "Configurando banco de dados..."
-          
-          # Verifica o status das migrações
-          echo "📋 Verificando status das migrações..."
-          npx prisma migrate status || echo "Status verificado"
-          
-          # Tenta deploy normal primeiro
-          if npx prisma migrate deploy; then
-            echo "✅ Migrações aplicadas com sucesso!"
-          else
-            echo "⚠️  Banco já possui schema - verificando necessidade de baseline..."
-            # Se falhar, tenta fazer baseline
-            npx prisma db pull --force && echo "✅ Schema sincronizado" || echo "ℹ️  Schema já sincronizado"
-            echo "📝 Se precisar de baseline manual, execute: npx prisma migrate resolve --applied [nome_da_migracao]"
-          fi
-      
-      # CORREÇÃO: Verificar se o Prisma Client foi gerado
-      - name: Verify Prisma Client Generation
-        run: |
-          echo "Verificando geração do Prisma Client..."
-          ls -la node_modules/.prisma/client/
-          echo "Prisma Client verificado!"
+          echo "Setting up database..."
+          npx prisma migrate deploy || npx prisma db pull --force
 
-      - name: Upload artifact for deployment job
+      - name: Build and test
+        run: |
+          npm run build --if-present
+          npm run test --if-present
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
@@ -98,18 +70,17 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
           path: .
 
-      - name: Recreate environment for Deployment
+      - name: Setup production environment
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
           DB_URL: ${{ secrets.AZURE_DATABASE_URL }}
         run: |
-          echo "Recriando ambiente para deploy..."
           echo "$CA_CERT" > mysql_ca.pem
           echo "DATABASE_URL=\"${DB_URL}?sslaccept=strict&ssl_ca=mysql_ca.pem\"" > .env
           echo "JWT_SECRET=uma_senha_super_segura" >> .env
@@ -119,14 +90,7 @@ jobs:
           echo "EMAIL_HOST=smtp.gmail.com" >> .env
           echo "EMAIL_PORT=587" >> .env
           chmod 644 mysql_ca.pem
-
-      # CORREÇÃO: Apenas gerar Prisma Client (já temos node_modules do build)
-      - name: Generate Prisma Client for Production
-        run: |
-          echo "Gerando Prisma Client para produção..."
           npx prisma generate
-          echo "Prisma Client gerado com sucesso!"
-          ls -la node_modules/.prisma/client/
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -135,8 +99,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E4558B550BA44947A89F4533C0DFF126 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_72B0BB0ADF6B482EBA7CB71BAEC42C3A }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'backend-doevida'
