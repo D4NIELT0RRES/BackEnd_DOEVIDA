@@ -23,8 +23,6 @@ jobs:
       - name: npm install, prisma generate, build, and test
         run: |
           npm install
-          # CORREÇÃO CRÍTICA DO PRISMA: Gera o código do Prisma Client para inclusão no pacote.
-          # Isso resolve o erro 'Cannot find module .prisma/client/default' no Azure.
           npx prisma generate --no-warn-engine
           npm run build --if-present
           npm run test --if-present
