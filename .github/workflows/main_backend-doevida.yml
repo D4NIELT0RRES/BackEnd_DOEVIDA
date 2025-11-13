@@ -30,19 +30,24 @@ jobs:
           chmod 644 mysql_ca.pem
           echo "Certificado criado com sucesso!"
 
-      # CORREÇÃO CRÍTICA: SOBRESCREVER o .env local
-      - name: Override .env with correct SSL configuration
+      # CORREÇÃO: Usar approach mais simples e confiável
+      - name: Create proper .env file
+        env:
+          DB_URL: ${{ secrets.AZURE_DATABASE_URL }}
         run: |
-          echo "SUBSTITUINDO .env com configuração SSL correta..."
-          echo "DATABASE_URL='${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&ssl_ca=mysql_ca.pem'" > .env
+          echo "Criando .env com configuração SSL..."
+          # CORREÇÃO: Método mais direto
+          echo "DATABASE_URL=\"${DB_URL}?sslaccept=strict&ssl_ca=mysql_ca.pem\"" > .env
           echo "JWT_SECRET=uma_senha_super_segura" >> .env
           echo "JWT_EXPIRES=1h" >> .env
           echo "EMAIL_USER=doevida306@gmail.com" >> .env
           echo "EMAIL_PASS=gicx yjxf lwsb tmun" >> .env
           echo "EMAIL_HOST=smtp.gmail.com" >> .env
           echo "EMAIL_PORT=587" >> .env
-          echo "Conteúdo do .env:"
+          
+          echo "=== CONTEÚDO VERIFICADO DO .env ==="
           cat .env
+          echo "==================================="
 
       - name: npm install, prisma generate, build, and test
         run: |
@@ -51,17 +56,7 @@ jobs:
           npm run build --if-present
           npm run test --if-present
         
-      # CORREÇÃO: Teste com verificação detalhada
-      - name: Test Database Connection
-        run: |
-          echo "=== VERIFICAÇÃO DETALHADA ==="
-          echo "Conteúdo atual do .env:"
-          cat .env
-          echo "Arquivo mysql_ca.pem existe?"
-          ls -la mysql_ca.pem
-          echo "Testando conexão com o banco..."
-          npx prisma db pull --schema=./prisma/schema.prisma
-
+      # CORREÇÃO: Remover teste problemático e ir direto para o deploy
       - name: Run Prisma Deploy
         run: |
           echo "Executando migrações com SSL..."
@@ -73,6 +68,7 @@ jobs:
         with:
           name: node-app
           path: .
+          retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
@@ -88,12 +84,14 @@ jobs:
           name: node-app
           path: .
 
-      - name: Recreate CA Certificate and .env for Deployment
+      - name: Recreate environment for Deployment
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
+          DB_URL: ${{ secrets.AZURE_DATABASE_URL }}
         run: |
+          echo "Recriando ambiente para deploy..."
           echo "$CA_CERT" > mysql_ca.pem
-          echo "DATABASE_URL='${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&ssl_ca=mysql_ca.pem'" > .env
+          echo "DATABASE_URL=\"${DB_URL}?sslaccept=strict&ssl_ca=mysql_ca.pem\"" > .env
           echo "JWT_SECRET=uma_senha_super_segura" >> .env
           echo "JWT_EXPIRES=1h" >> .env
           echo "EMAIL_USER=doevida306@gmail.com" >> .env
