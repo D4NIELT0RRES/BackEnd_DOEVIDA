@@ -5,7 +5,10 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://admdoevida:Password123!@doevida.mysql.database.azure.com:3306/db_doevida_tcc?sslmode=require"
+  url      = env("DATABASE_URL")
+  
+  relationMode = "prisma"
+  extensions   = [sslMode(require: "verify_identity", rejectUnauthorized: true, ca: "./mysql_ca.pem")]
 }
 
 model tbl_agendamento {
