@@ -10,7 +10,7 @@ Este guia contém exemplos práticos de como usar cada endpoint da API.
 - [Hospitais](#hospitais)
 - [Recuperação de Senha](#recuperação-de-senha)
 - [Códigos de Status](#códigos-de-status)
-
+  
 ---
 
 ## 🔐 Autenticação
