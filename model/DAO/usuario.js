@@ -2,13 +2,13 @@
  * OBJETIVO: Model responsável pelo CRUD de dados referente a USUÁRIO no BANCO DE DADOS.
  * DATA: 18/09/2025 (ajustado 28/09/2025)
  * AUTOR: Daniel Torres
- * Versão: 1.3 (corrigido JOINs e nomes das tabelas/colunas)
+ * Versão: 1.5 (corrigido para pegar telefone da coluna numero da tbl_usuario)
  ***************************************************************************************/
 
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-//Inserir um novo usuário
+// Inserir um novo usuário
 const insertUsuario = async function (usuario) {
     try {
         let sqlInsert = `
@@ -65,8 +65,8 @@ const insertUsuario = async function (usuario) {
                     u.bairro,
                     u.localidade,
                     u.uf,
-                    u.numero,
-                    s.sexo as nome_sexo
+                    u.numero AS telefone,
+                    s.sexo AS nome_sexo
                 FROM tbl_usuario u
                 LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
                 LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
@@ -85,7 +85,7 @@ const insertUsuario = async function (usuario) {
 };
 
 
-//Atualizar um usuário existente pelo ID
+// Atualizar um usuário existente pelo ID
 const updateUsuario = async function (usuario) {
     try {
         let sql = `
@@ -100,7 +100,7 @@ const updateUsuario = async function (usuario) {
                 bairro              = ${usuario.bairro ? `'${usuario.bairro}'` : 'NULL'},
                 localidade          = ${usuario.localidade ? `'${usuario.localidade}'` : 'NULL'},
                 uf                  = ${usuario.uf ? `'${usuario.uf}'` : 'NULL'},
-                numero              = ${usuario.numero ? `'${usuario.numero}'` : 'NULL'},
+                numero              = ${usuario.telefone ? `'${usuario.telefone}'` : 'NULL'},
                 data_nascimento     = ${usuario.data_nascimento ? `'${usuario.data_nascimento}'` : 'NULL'},
                 foto_perfil         = ${usuario.foto_perfil ? `'${usuario.foto_perfil}'` : 'NULL'},
                 id_tipo_sanguineo   = ${usuario.id_tipo_sanguineo ? usuario.id_tipo_sanguineo : 'NULL'},
@@ -130,7 +130,7 @@ const updateSenha = async (idUsuario, senhaHash) => {
   }
 }
 
-//Deletar um usuário pelo ID
+// Deletar um usuário pelo ID
 const deleteUsuario = async function (id) {
     try {
         let sql = `DELETE FROM tbl_usuario WHERE id = ${id}`
@@ -142,7 +142,7 @@ const deleteUsuario = async function (id) {
     }
 }
 
-//Listar todos os usuários
+// Listar todos os usuários
 const selectAllUsuario = async function () {
     try {
         let sql = `
@@ -157,8 +157,8 @@ const selectAllUsuario = async function () {
                 u.bairro,
                 u.localidade,
                 u.uf,
-                u.numero,
-                ts.tipo AS tipo_sanguineo_nome,  -- Nome do tipo sanguíneo
+                u.numero AS telefone,
+                ts.tipo AS tipo_sanguineo_nome,
                 u.data_nascimento,
                 u.foto_perfil,
                 u.data_criacao,
@@ -168,7 +168,6 @@ const selectAllUsuario = async function () {
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
             LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
             ORDER BY u.id ASC
-
         `
         let result = await prisma.$queryRawUnsafe(sql)
         return result.length > 0 ? result : false
@@ -178,7 +177,7 @@ const selectAllUsuario = async function () {
     }
 }
 
-//Buscar usuário pelo ID
+// Buscar usuário pelo ID
 const selectByIdUsuario = async function (id) {
     try {
         let sql = `
@@ -194,7 +193,8 @@ const selectByIdUsuario = async function (id) {
                 u.foto_perfil,
                 u.data_criacao,
                 u.data_atualizacao,
-                s.sexo as nome_sexo
+                s.sexo AS nome_sexo,
+                u.numero AS telefone
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
             LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
@@ -208,7 +208,7 @@ const selectByIdUsuario = async function (id) {
     }
 }
 
-//Buscar usuário pelo email
+// Buscar usuário pelo email
 const selectByEmailUsuario = async function (email) {
     try {
         let sql = `
@@ -224,7 +224,8 @@ const selectByEmailUsuario = async function (email) {
                 u.foto_perfil,
                 u.data_criacao,
                 u.data_atualizacao,
-                s.sexo as nome_sexo
+                s.sexo AS nome_sexo,
+                u.numero AS telefone
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
             LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
@@ -238,7 +239,7 @@ const selectByEmailUsuario = async function (email) {
     }
 }
 
-//Buscar usuário pelo NOME
+// Buscar usuário pelo NOME
 const selectByNomeUsuario = async function (nome) {
     try {
         let sql = `
@@ -254,7 +255,8 @@ const selectByNomeUsuario = async function (nome) {
                 u.foto_perfil,
                 u.data_criacao,
                 u.data_atualizacao,
-                s.sexo as nome_sexo
+                s.sexo AS nome_sexo,
+                u.numero AS telefone
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
             LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
@@ -268,7 +270,7 @@ const selectByNomeUsuario = async function (nome) {
     }
 }
 
-//Buscar usuário pelo CPF
+// Buscar usuário pelo CPF
 const selectByCpfUsuario = async function (cpf) {
     try {
         let sql = `
@@ -288,7 +290,7 @@ const selectByCpfUsuario = async function (cpf) {
     }
 }
 
-//Fazer login do usuário (por email ou nome)
+// Fazer login do usuário (por email ou nome)
 const loginUsuario = async function (dadosLogin) {
     try {
         let sql = `
@@ -304,7 +306,8 @@ const loginUsuario = async function (dadosLogin) {
                 u.foto_perfil,
                 u.data_criacao,
                 u.data_atualizacao,
-                s.sexo as nome_sexo
+                s.sexo AS nome_sexo,
+                u.numero AS telefone
             FROM tbl_usuario u
             LEFT JOIN tbl_sexo s ON u.id_sexo = s.id
             LEFT JOIN tbl_tipo_sanguineo ts ON u.id_tipo_sanguineo = ts.id
@@ -313,13 +316,8 @@ const loginUsuario = async function (dadosLogin) {
         `
 
         let result = await prisma.$queryRawUnsafe(sql)
-
-        if(result && result.length > 0){
-            return result
-        }else{
-            return false
-        }
-    } catch(error){
+        return (result && result.length > 0) ? result : false
+    } catch (error) {
         console.error("Erro na DAO loginUsuario:", error)
         return false   
     }
