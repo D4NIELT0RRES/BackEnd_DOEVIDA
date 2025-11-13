@@ -23,7 +23,7 @@ jobs:
       - name: npm install, prisma generate, build, and test
         run: |
           npm install
-          # Este comando gera o Prisma Client e corrige o erro MODULE_NOT_FOUND no Azure.
+          # 1. Gera o Prisma Client, corrigindo o erro MODULE_NOT_FOUND
           npx prisma generate
           npm run build --if-present
           npm run test --if-present
@@ -32,17 +32,18 @@ jobs:
       # SOLUÇÃO PARA CONEXÃO SEGURA COM AZURE MYSQL (SSL)
       # ----------------------------------------------------------------------------------
 
-      # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco.
+      # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco como 'mysql_ca.pem'.
       - name: Write Azure MySQL CA Certificate File
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
         run: echo "$CA_CERT" > mysql_ca.pem 
         
       # PASSO 2: Executa a migração (deploy).
+      # Garante que o banco de dados esteja atualizado antes do deploy da aplicação.
       - name: Run Prisma Deploy
         run: npx prisma migrate deploy
         env:
-          # O Secret AZURE_DATABASE_URL DEVE conter a URL completa com os parâmetros SSL.
+          # O Secret DATABASE_URL DEVE incluir ?sslmode=verify-identity&sslcert=./mysql_ca.pem
           DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}
           
       # ----------------------------------------------------------------------------------
@@ -51,6 +52,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
+          # Empacota todo o projeto, incluindo o Prisma Client gerado e o mysql_ca.pem.
           path: .
 
   deploy:
@@ -62,6 +64,7 @@ jobs:
 
     steps:
       - name: Download artifact from build job
+        # Baixa o artefato para o diretório de deploy.
         uses: actions/download-artifact@v4
         with:
           name: node-app
@@ -80,4 +83,5 @@ jobs:
         with:
           app-name: 'backend-doevida'
           slot-name: 'Production'
+          # Usa o pacote baixado.
           package: deploy_package
