@@ -25,13 +25,30 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
+          
+      # -----------------------------------------------------
+      # SOLUÇÃO PARA ERRO P1000 (FALHA DE AUTENTICAÇÃO SSL)
+      # -----------------------------------------------------
 
-      # --- NOVO PASSO: Executa a migração do banco de dados no ambiente do GitHub Actions ---
-      - name: Run Prisma Deploy
+      # PASSO 1: Escreve o certificado CA no disco do Runner.
+      # O conteúdo é lido do Secret AZURE_MYSQL_CA_CERT.
+      - name: Write Azure MySQL CA Certificate File
+        env:
+          CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
+        run: echo "$CA_CERT" > mysql_ca.pem 
+        
+      # PASSO 2: Executa a migração do banco de dados.
+      # O parâmetro '&sslcert=./mysql_ca.pem' é adicionado para forçar o Prisma a usar o certificado.
+      - name: Run Prisma Deploy with SSL Certificate Path
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}
-
+          # AZURE_DATABASE_URL DEVE SER: mysql://adm:senha@host:port/db (sem o ?sslmode=require)
+          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}&sslcert=./mysql_ca.pem
+          
+      # -----------------------------------------------------
+      # FIM DA SOLUÇÃO SSL
+      # -----------------------------------------------------
+          
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
