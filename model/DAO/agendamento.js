@@ -50,14 +50,21 @@ const updateAgendamento = async function (agendamento) {
     try {
         if (!agendamento.id) return false  // Garante que não atualiza sem ID
 
-        let sql = `UPDATE tbl_agendamento SET 
-                        status = '${agendamento.status}',
-                        data = '${agendamento.data}',
-                        hora = '${agendamento.hora}',
-                        id_usuario = ${agendamento.id_usuario},
-                        id_doacao = ${agendamento.id_doacao},
-                        id_hospital = ${agendamento.id_hospital}
-                   WHERE id = ${agendamento.id}`
+        // Montar SQL dinamicamente - id_doacao é opcional
+        let campos = [
+            `status = '${agendamento.status}'`,
+            `data = '${agendamento.data}'`,
+            `hora = '${agendamento.hora}'`,
+            `id_usuario = ${agendamento.id_usuario}`,
+            `id_hospital = ${agendamento.id_hospital}`
+        ];
+        
+        // Só adicionar id_doacao se fornecido
+        if (agendamento.id_doacao !== undefined && agendamento.id_doacao !== null) {
+            campos.push(`id_doacao = ${agendamento.id_doacao}`);
+        }
+        
+        let sql = `UPDATE tbl_agendamento SET ${campos.join(', ')} WHERE id = ${agendamento.id}`
 
         let result = await prisma.$executeRawUnsafe(sql)
         if (result) {
@@ -115,7 +122,7 @@ const selectByIdAgendamento = async function (id) {
 const selectByStatusAgendamento = async function (status) {
     try {
         // Validar se o status é válido
-        const statusValidos = ['Agendado', 'Em espera', 'Concluído'];
+        const statusValidos = ['Agendado', 'Em espera', 'Concluído', 'Cancelado'];
         if (!statusValidos.includes(status)) {
             return false;
         }

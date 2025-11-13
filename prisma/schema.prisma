@@ -163,4 +163,5 @@ enum tbl_agendamento_status {
   Agendado
   Em_espera @map("Em espera")
   Conclu_do @map("Concluído")
+  Cancelado
 }

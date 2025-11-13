@@ -13,51 +13,109 @@ const agendamentoDAO = require('../../model/DAO/agendamento')
 const inserirRegistroDoacao = async function(registro, contentType, userId) {
     try {
         if(contentType === 'application/json') {
-            // Validação dos campos obrigatórios
-            if(!registro.id_agendamento || isNaN(registro.id_agendamento)) {
-                return {
-                    status: false,
-                    status_code: 400,
-                    message: "ID do agendamento é obrigatório e deve ser um número válido"
+            let novoRegistro;
+            
+            // Verificar se tem agendamento ou dados manuais
+            if(registro.id_agendamento) {
+                // Registro via agendamento
+                if(isNaN(registro.id_agendamento)) {
+                    return {
+                        status: false,
+                        status_code: 400,
+                        message: "ID do agendamento deve ser um número válido"
+                    }
                 }
-            }
 
-            // Buscar dados automáticos do agendamento
-            let dadosAgendamento = await registroDAO.getDadosAgendamento(
-                parseInt(registro.id_agendamento), 
-                userId
-            )
+                // Buscar dados automáticos do agendamento
+                console.log('🔍 Buscando dados do agendamento:', parseInt(registro.id_agendamento), 'para usuário:', userId)
+                let dadosAgendamento = await registroDAO.getDadosAgendamento(
+                    parseInt(registro.id_agendamento), 
+                    userId
+                )
 
-            if(!dadosAgendamento) {
-                return {
-                    status: false,
-                    status_code: 404,
-                    message: "Agendamento não encontrado, não concluído ou não pertence ao usuário"
+                console.log('📊 Dados do agendamento retornados:', dadosAgendamento)
+
+                if(!dadosAgendamento) {
+                    return {
+                        status: false,
+                        status_code: 404,
+                        message: "Agendamento não encontrado, não concluído ou não pertence ao usuário"
+                    }
                 }
-            }
 
-            // Verificar se já existe registro para este agendamento
-            let registroExistente = await registroDAO.selectByIdAgendamento(
-                parseInt(registro.id_agendamento)
-            )
+                // Verificar se já existe registro para este agendamento
+                let registroExistente = await registroDAO.selectByIdAgendamento(
+                    parseInt(registro.id_agendamento)
+                )
 
-            if(registroExistente) {
-                return {
-                    status: false,
-                    status_code: 409,
-                    message: "Já existe um registro de doação para este agendamento"
+                if(registroExistente) {
+                    return {
+                        status: false,
+                        status_code: 409,
+                        message: "Já existe um registro de doação para este agendamento"
+                    }
                 }
-            }
 
-            // Preparar dados do registro com informações automáticas
-            let novoRegistro = {
-                id_agendamento: dadosAgendamento.id_agendamento,
-                id_usuario: dadosAgendamento.id_usuario,
-                id_hospital: dadosAgendamento.id_hospital,
-                data_doacao: dadosAgendamento.data_doacao,
-                local_doacao: dadosAgendamento.local_doacao,
-                observacao: registro.observacao || null,
-                foto_comprovante: registro.foto_comprovante || null
+                // Formatar data para MySQL (YYYY-MM-DD)
+                let dataFormatada = dadosAgendamento.data_doacao
+                if (dadosAgendamento.data_doacao instanceof Date) {
+                    dataFormatada = dadosAgendamento.data_doacao.toISOString().split('T')[0]
+                } else if (typeof dadosAgendamento.data_doacao === 'string') {
+                    // Se já é string, garantir formato YYYY-MM-DD
+                    const data = new Date(dadosAgendamento.data_doacao)
+                    dataFormatada = data.toISOString().split('T')[0]
+                }
+
+                novoRegistro = {
+                    id_agendamento: dadosAgendamento.id_agendamento,
+                    id_usuario: dadosAgendamento.id_usuario,
+                    id_hospital: dadosAgendamento.id_hospital,
+                    data_doacao: dataFormatada,
+                    local_doacao: dadosAgendamento.local_doacao,
+                    observacao: registro.observacao || null,
+                    foto_comprovante: registro.foto_comprovante || null
+                }
+                
+                console.log('📝 Novo registro preparado:', novoRegistro)
+            } else {
+                // Registro manual sem agendamento
+                if(!registro.id_hospital || isNaN(registro.id_hospital)) {
+                    return {
+                        status: false,
+                        status_code: 400,
+                        message: "ID do hospital é obrigatório"
+                    }
+                }
+                
+                if(!registro.data_doacao) {
+                    return {
+                        status: false,
+                        status_code: 400,
+                        message: "Data da doação é obrigatória"
+                    }
+                }
+
+                // Buscar nome do hospital
+                const controllerHospital = require('../hospital/controllerHospital')
+                const hospitalInfo = await controllerHospital.buscarHospital(parseInt(registro.id_hospital))
+                
+                if(!hospitalInfo || hospitalInfo.status_code !== 200) {
+                    return {
+                        status: false,
+                        status_code: 404,
+                        message: "Hospital não encontrado"
+                    }
+                }
+
+                novoRegistro = {
+                    id_agendamento: null,
+                    id_usuario: userId,
+                    id_hospital: parseInt(registro.id_hospital),
+                    data_doacao: registro.data_doacao,
+                    local_doacao: hospitalInfo.hospital.nome,
+                    observacao: registro.observacao || null,
+                    foto_comprovante: registro.foto_comprovante || null
+                }
             }
 
             // Validar tamanho da URL da foto
@@ -69,9 +127,11 @@ const inserirRegistroDoacao = async function(registro, contentType, userId) {
                 }
             }
 
+            console.log('🚀 Inserindo registro no banco...')
             let resultRegistro = await registroDAO.insertRegistroDoacao(novoRegistro)
             
             if(resultRegistro) {
+                console.log('✅ Registro criado com sucesso:', resultRegistro)
                 return {
                     status: true,
                     status_code: 201,
@@ -79,6 +139,7 @@ const inserirRegistroDoacao = async function(registro, contentType, userId) {
                     registro: resultRegistro
                 }
             } else {
+                console.error('❌ Falha ao inserir registro no banco')
                 return MESSAGE.ERROR_INTERNAL_SERVER_MODEL
             }
         } else {
