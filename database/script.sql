@@ -8,6 +8,8 @@ USE db_doevida_tcc;
 
 drop database db_doevida_tcc;
 
+show tables;
+
 select * from tbl_tipo_sanguineo;
 -- =========================
 -- TABELA: Tipo Sanguíneo
