@@ -20,30 +20,31 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: npm install, build, and test
+      - name: npm install, prisma generate, build, and test
         run: |
           npm install
+          # CORREÇÃO CRÍTICA: Gera o código do Prisma Client (resolve o erro MODULE_NOT_FOUND no Azure)
+          npx prisma generate
           npm run build --if-present
           npm run test --if-present
           
       # ----------------------------------------------------------------------------------
-      # CORREÇÃO PARA ERRO P1001 (Host não encontrado) E SSL
+      # SOLUÇÃO PARA CONEXÃO SEGURA COM AZURE MYSQL (SSL)
       # ----------------------------------------------------------------------------------
 
       # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco.
       - name: Write Azure MySQL CA Certificate File
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
-        # O arquivo 'mysql_ca.pem' é criado no diretório de trabalho.
         run: echo "$CA_CERT" > mysql_ca.pem 
         
-      # PASSO 2: Executa o Prisma, injetando a URL de conexão completa.
-      - name: Run Prisma Deploy with SSL Certificate Path and Mode
+      # PASSO 2: Executa a migração (deploy).
+      - name: Run Prisma Deploy
         run: npx prisma migrate deploy
         env:
-          # ATENÇÃO: A URL base DEVE estar no Secret sem nenhum parâmetro de query (sem '?').
-          # A variável de ambiente é definida aqui com a URL completa + os parâmetros SSL.
-          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}?sslmode=verify-identity&sslcert=./mysql_ca.pem
+          # ATENÇÃO: O Secret AZURE_DATABASE_URL DEVE conter a URL completa com os parâmetros SSL:
+          # Ex: ...?sslmode=verify-identity&sslcert=./mysql_ca.pem
+          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}
           
       # ----------------------------------------------------------------------------------
       
@@ -57,14 +58,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write # Necessário para solicitar o JWT (OpenID Connect)
+      id-token: write # Necessário para autenticação OIDC (Azure Login)
       contents: read # Necessário para actions/checkout
 
     steps:
       - name: Download artifact from build job
+        # Baixa o artefato que agora inclui o Prisma Client gerado e os arquivos de código
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: deploy_package
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -79,4 +82,6 @@ jobs:
         with:
           app-name: 'backend-doevida'
           slot-name: 'Production'
-          package: .
+          # Aponta para o diretório que contém o artefato baixado
+          package: deploy_package
+          # enable-package-deploy: true (REMOVIDO - Causando erro de sintaxe)
