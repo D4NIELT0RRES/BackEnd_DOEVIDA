@@ -28,12 +28,12 @@ jobs:
           echo "Criando certificado CA..."
           echo "$CA_CERT" > mysql_ca.pem
           chmod 644 mysql_ca.pem
-          echo "Certificado criado!"
+          echo "Certificado criado com sucesso!"
 
-      # CORREÇÃO: Criar .env temporário com DATABASE_URL completa
+      # CORREÇÃO: Criar .env com DATABASE_URL completa com SSL
       - name: Create .env with SSL configuration
         run: |
-          echo "DATABASE_URL='${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&sslcert=mysql_ca.pem&sslidentity=mysql_ca.pem'" > .env
+          echo "DATABASE_URL='${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&ssl_ca=mysql_ca.pem'" > .env
           echo "Conteúdo do .env:"
           cat .env
 
@@ -44,7 +44,12 @@ jobs:
           npm run build --if-present
           npm run test --if-present
         
-      # CORREÇÃO: Usar .env file em vez de variável de ambiente
+      # CORREÇÃO: Verificar se o SSL está funcionando
+      - name: Test Database Connection
+        run: |
+          echo "Testando conexão com o banco..."
+          npx prisma db pull --schema=./prisma/schema.prisma
+
       - name: Run Prisma Deploy
         run: |
           echo "Executando migrações com SSL..."
@@ -76,7 +81,7 @@ jobs:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
         run: |
           echo "$CA_CERT" > mysql_ca.pem
-          echo "DATABASE_URL='${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&sslcert=mysql_ca.pem&sslidentity=mysql_ca.pem'" > .env
+          echo "DATABASE_URL='${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&ssl_ca=mysql_ca.pem'" > .env
           chmod 644 mysql_ca.pem
 
       - name: Login to Azure

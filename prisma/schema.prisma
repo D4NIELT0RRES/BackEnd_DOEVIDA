@@ -6,10 +6,8 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-  
-  relationMode = "prisma"
-  extensions   = [sslMode(require: "verify_identity", rejectUnauthorized: true, ca: "./mysql_ca.pem")]
 }
+
 
 model tbl_agendamento {
   id                  Int                    @id @default(autoincrement())
