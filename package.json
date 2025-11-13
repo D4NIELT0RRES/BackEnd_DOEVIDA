@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "NODE_ENV=development node app.js",
-    "prod": "NODE_ENV=production node app.js"
+    "prod": "NODE_ENV=production node app.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
