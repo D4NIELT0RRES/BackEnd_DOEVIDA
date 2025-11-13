@@ -107,11 +107,10 @@ jobs:
           echo "EMAIL_PORT=587" >> .env
           chmod 644 mysql_ca.pem
 
-      # CORREÇÃO CRÍTICA: Gerar Prisma Client NOVAMENTE no ambiente de deploy
+      # CORREÇÃO: Apenas gerar Prisma Client (já temos node_modules do build)
       - name: Generate Prisma Client for Production
         run: |
           echo "Gerando Prisma Client para produção..."
-          npm install
           npx prisma generate
           echo "Prisma Client gerado com sucesso!"
           ls -la node_modules/.prisma/client/
