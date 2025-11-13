@@ -20,40 +20,46 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: npm install, prisma generate, build, and test
-        run: |
-          npm install
-          # 1. Gera o Prisma Client, corrigindo o erro MODULE_NOT_FOUND
-          npx prisma generate
-          npm run build --if-present
-          npm run test --if-present
-          
       # ----------------------------------------------------------------------------------
-      # SOLUÇÃO PARA CONEXÃO SEGURA COM AZURE MYSQL (SSL)
+      # CORREÇÃO: CERTIFICADO DEVE SER CRIADO ANTES DO npm install E PRISMA GENERATE
       # ----------------------------------------------------------------------------------
-
-      # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco como 'mysql_ca.pem'.
       - name: Write Azure MySQL CA Certificate File
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
-        run: echo "$CA_CERT" > mysql_ca.pem 
+        run: |
+          echo "Criando certificado CA..."
+          echo "$CA_CERT" > mysql_ca.pem
+          chmod 644 mysql_ca.pem
+          ls -la mysql_ca.pem
+          echo "Certificado criado com sucesso!"
+
+      - name: npm install, prisma generate, build, and test
+        run: |
+          npm install
+          # Gera o Prisma Client com o certificado disponível
+          npx prisma generate
+          npm run build --if-present
+          npm run test --if-present
         
-      # PASSO 2: Executa a migração (deploy).
-      # Garante que o banco de dados esteja atualizado antes do deploy da aplicação.
-      - name: Run Prisma Deploy
-        run: npx prisma migrate deploy
-        env:
-          # O Secret DATABASE_URL DEVE incluir ?sslmode=verify-identity&sslcert=./mysql_ca.pem
-          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}
-          
       # ----------------------------------------------------------------------------------
+      # CORREÇÃO PRINCIPAL: CONFIGURAR DATABASE_URL COM PARÂMETROS SSL CORRETOS
+      # ----------------------------------------------------------------------------------
+      - name: Run Prisma Deploy
+        env:
+          # CORREÇÃO: Adicionar parâmetros SSL obrigatórios para Azure MySQL
+          DATABASE_URL: "${{ secrets.AZURE_DATABASE_URL }}?sslaccept=strict&sslcert=mysql_ca.pem&sslidentity=mysql_ca.pem"
+        run: |
+          echo "Executando migrações com SSL..."
+          npx prisma migrate deploy
+          echo "Migrações concluídas com sucesso!"
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          # Empacota todo o projeto, incluindo o Prisma Client gerado e o mysql_ca.pem.
           path: .
+          # CORREÇÃO: Incluir o certificado no artefato
+          include-hidden-files: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -64,12 +70,21 @@ jobs:
 
     steps:
       - name: Download artifact from build job
-        # Baixa o artefato para o diretório de deploy.
         uses: actions/download-artifact@v4
         with:
           name: node-app
-          path: deploy_package
-      
+          path: .
+
+      # CORREÇÃO: Recriar o certificado no job de deploy também
+      - name: Recreate CA Certificate for Deployment
+        env:
+          CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
+        run: |
+          echo "Recriando certificado CA para deploy..."
+          echo "$CA_CERT" > mysql_ca.pem
+          chmod 644 mysql_ca.pem
+          ls -la mysql_ca.pem
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -83,5 +98,4 @@ jobs:
         with:
           app-name: 'backend-doevida'
           slot-name: 'Production'
-          # Usa o pacote baixado.
-          package: deploy_package
+          package: .
