@@ -27,7 +27,7 @@ jobs:
           npm run test --if-present
           
       # ----------------------------------------------------------------------------------
-      # SOLUÇÃO CRÍTICA PARA O ERRO SSL DO AZURE MYSQL
+      # CORREÇÃO PARA ERRO P1001 (Host não encontrado) E SSL
       # ----------------------------------------------------------------------------------
 
       # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco.
@@ -41,8 +41,8 @@ jobs:
       - name: Run Prisma Deploy with SSL Certificate Path and Mode
         run: npx prisma migrate deploy
         env:
-          # A URL FINAL é criada: https://secret.com/en-us?sslmode=verify-identity&sslcert=./mysql_ca.pem
-          # O 'sslmode=verify-identity' é essencial para satisfazer a exigência de segurança do Azure.
+          # ATENÇÃO: A URL base DEVE estar no Secret sem nenhum parâmetro de query (sem '?').
+          # A variável de ambiente é definida aqui com a URL completa + os parâmetros SSL.
           DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}?sslmode=verify-identity&sslcert=./mysql_ca.pem
           
       # ----------------------------------------------------------------------------------
