@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read # Necessário para actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -26,29 +26,27 @@ jobs:
           npm run build --if-present
           npm run test --if-present
           
-      # -----------------------------------------------------
-      # SOLUÇÃO PARA ERRO P1000 (FALHA DE AUTENTICAÇÃO SSL)
-      # -----------------------------------------------------
+      # ----------------------------------------------------------------------------------
+      # SOLUÇÃO CRÍTICA PARA O ERRO SSL DO AZURE MYSQL
+      # ----------------------------------------------------------------------------------
 
-      # PASSO 1: Escreve o certificado CA no disco do Runner.
-      # O conteúdo é lido do Secret AZURE_MYSQL_CA_CERT.
+      # PASSO 1: Escreve o conteúdo do Secret AZURE_MYSQL_CA_CERT no disco.
       - name: Write Azure MySQL CA Certificate File
         env:
           CA_CERT: ${{ secrets.AZURE_MYSQL_CA_CERT }}
+        # O arquivo 'mysql_ca.pem' é criado no diretório de trabalho.
         run: echo "$CA_CERT" > mysql_ca.pem 
         
-      # PASSO 2: Executa a migração do banco de dados.
-      # O parâmetro '&sslcert=./mysql_ca.pem' é adicionado para forçar o Prisma a usar o certificado.
-      - name: Run Prisma Deploy with SSL Certificate Path
+      # PASSO 2: Executa o Prisma, injetando a URL de conexão completa.
+      - name: Run Prisma Deploy with SSL Certificate Path and Mode
         run: npx prisma migrate deploy
         env:
-          # AZURE_DATABASE_URL DEVE SER: mysql://adm:senha@host:port/db (sem o ?sslmode=require)
-          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}&sslcert=./mysql_ca.pem
+          # A URL FINAL é criada: https://secret.com/en-us?sslmode=verify-identity&sslcert=./mysql_ca.pem
+          # O 'sslmode=verify-identity' é essencial para satisfazer a exigência de segurança do Azure.
+          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}?sslmode=verify-identity&sslcert=./mysql_ca.pem
           
-      # -----------------------------------------------------
-      # FIM DA SOLUÇÃO SSL
-      # -----------------------------------------------------
-          
+      # ----------------------------------------------------------------------------------
+      
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -59,8 +57,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write # Necessário para solicitar o JWT (OpenID Connect)
+      contents: read # Necessário para actions/checkout
 
     steps:
       - name: Download artifact from build job
