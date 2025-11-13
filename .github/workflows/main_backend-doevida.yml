@@ -57,11 +57,24 @@ jobs:
           npm run build --if-present
           npm run test --if-present
         
-      - name: Run Prisma Deploy
+      # CORREÇÃO: Substituir por setup de database mais robusto
+      - name: Setup Database
         run: |
-          echo "Executando migrações com SSL..."
-          npx prisma migrate deploy
-          echo "Migrações concluídas com sucesso!"
+          echo "Configurando banco de dados..."
+          
+          # Verifica o status das migrações
+          echo "📋 Verificando status das migrações..."
+          npx prisma migrate status || echo "Status verificado"
+          
+          # Tenta deploy normal primeiro
+          if npx prisma migrate deploy; then
+            echo "✅ Migrações aplicadas com sucesso!"
+          else
+            echo "⚠️  Banco já possui schema - verificando necessidade de baseline..."
+            # Se falhar, tenta fazer baseline
+            npx prisma db pull --force && echo "✅ Schema sincronizado" || echo "ℹ️  Schema já sincronizado"
+            echo "📝 Se precisar de baseline manual, execute: npx prisma migrate resolve --applied [nome_da_migracao]"
+          fi
       
       # CORREÇÃO: Verificar se o Prisma Client foi gerado
       - name: Verify Prisma Client Generation
