@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL", "?sslmode=require")
+  url      = env("DATABASE_URL")
 }
 
 model tbl_agendamento {
