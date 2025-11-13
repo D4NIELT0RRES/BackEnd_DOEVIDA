@@ -55,13 +55,6 @@ jobs:
           npx prisma generate
           npm run build --if-present
           npm run test --if-present
-        
-      # CORREÇÃO: Remover teste problemático e ir direto para o deploy
-      - name: Run Prisma Deploy
-        run: |
-          echo "Executando migrações com SSL..."
-          npx prisma migrate deploy
-          echo "Migrações concluídas com sucesso!"
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
