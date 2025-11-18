@@ -1,13 +1,12 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"] // CORREÇÃO DE BINÁRIO
-  output        = "./prisma/generated/client"        // CORREÇÃO DE CAMINHO
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "mysql"
-  // CORREÇÃO DE SSL (APENAS PARA O BUILD TEMPORARIAMENTE)
-  url      = "mysql://admdoevida:Password123!@doevida.mysql.database.azure.com:3306/db_doevida_tcc?sslmode=REQUIRED&sslcert=/home/site/wwwroot/DigiCertGlobalRootG2.crt.pem" 
+  url      = env("DATABASE_URL")
 }
 
 model tbl_agendamento {
@@ -165,4 +164,5 @@ enum tbl_agendamento_status {
   Agendado
   Em_espera @map("Em espera")
   Conclu_do @map("Concluído")
+  Cancelado
 }

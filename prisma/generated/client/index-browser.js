@@ -299,7 +299,8 @@ exports.Prisma.tbl_registro_doacaoOrderByRelevanceFieldEnum = {
 exports.tbl_agendamento_status = exports.$Enums.tbl_agendamento_status = {
   Agendado: 'Agendado',
   Em_espera: 'Em_espera',
-  Conclu_do: 'Conclu_do'
+  Conclu_do: 'Conclu_do',
+  Cancelado: 'Cancelado'
 };
 
 exports.Prisma.ModelName = {
