@@ -5,7 +5,7 @@
  * Versão: 2.0 (ajustado para usar id_tipo_sanguineo + id_hospital)
  ***************************************************************************************/
 
-const { PrismaClient } = require('../../prisma/generated/client')
+const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 //Inserir um novo banco de sangue

@@ -5,7 +5,7 @@
  * Versão: 1.5 (corrigido para pegar telefone da coluna numero da tbl_usuario)
  ***************************************************************************************/
 
-const { PrismaClient } = require('../../prisma/generated/client')
+const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 // Inserir um novo usuário

@@ -5,7 +5,7 @@
  * Versão: 1.4
  ***************************************************************************************/
 
-const { PrismaClient } = require('../../prisma/generated/client')
+const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 //Insere um novo agendamento

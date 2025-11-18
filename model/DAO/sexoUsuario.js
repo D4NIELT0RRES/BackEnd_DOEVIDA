@@ -5,7 +5,7 @@
  * Versão: 1.3
  ***************************************************************************************/
 
-const { PrismaClient } = require('../../prisma/generated/client')
+const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 //Inserir um novo sexo de usuário

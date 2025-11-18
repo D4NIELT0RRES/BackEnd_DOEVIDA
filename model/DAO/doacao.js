@@ -5,7 +5,7 @@
  * Versão: 1.2 (Correções de consistência)
  ***************************************************************************************/
 
-const { PrismaClient } = require('../../prisma/generated/client')
+const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 //Insere uma nova doação
