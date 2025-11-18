@@ -19,7 +19,8 @@
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.10.2",
     "cross-env": "^7.0.3",
-    "helmet": "^7.0.0"
+    "helmet": "^7.0.0",
+    "compression": "^1.7.4"
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon app.js",
