@@ -5,12 +5,19 @@
  * Versão: 1.0
  ***************************************************************************************/
 
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('../../prisma/generated/client')
 const prisma = new PrismaClient()
 
 //Insere um novo registro de doação baseado no agendamento
 const insertRegistroDoacao = async function (registroDoacao) {
     try {
+        // Escapar strings para evitar SQL injection
+        const escaparString = (str) => str ? str.replace(/'/g, "''") : null
+        
+        const localDoacao = escaparString(registroDoacao.local_doacao)
+        const observacao = registroDoacao.observacao ? escaparString(registroDoacao.observacao) : null
+        const fotoComprovante = registroDoacao.foto_comprovante ? escaparString(registroDoacao.foto_comprovante) : null
+
         let sql = `
             INSERT INTO tbl_registro_doacao (
                 id_agendamento,
@@ -21,16 +28,17 @@ const insertRegistroDoacao = async function (registroDoacao) {
                 observacao,
                 foto_comprovante
             ) VALUES (
-                ${registroDoacao.id_agendamento},
+                ${registroDoacao.id_agendamento ? registroDoacao.id_agendamento : 'NULL'},
                 ${registroDoacao.id_usuario},
                 ${registroDoacao.id_hospital},
                 '${registroDoacao.data_doacao}',
-                '${registroDoacao.local_doacao}',
-                ${registroDoacao.observacao ? `'${registroDoacao.observacao}'` : 'NULL'},
-                ${registroDoacao.foto_comprovante ? `'${registroDoacao.foto_comprovante}'` : 'NULL'}
+                '${localDoacao}',
+                ${observacao ? `'${observacao}'` : 'NULL'},
+                ${fotoComprovante ? `'${fotoComprovante}'` : 'NULL'}
             );
         `
 
+        console.log('📝 SQL INSERT:', sql)
         let result = await prisma.$executeRawUnsafe(sql)
 
         if (result) {
@@ -43,7 +51,7 @@ const insertRegistroDoacao = async function (registroDoacao) {
                 FROM tbl_registro_doacao rd
                 INNER JOIN tbl_usuario u ON rd.id_usuario = u.id
                 INNER JOIN tbl_hospital h ON rd.id_hospital = h.id
-                WHERE rd.id_agendamento = ${registroDoacao.id_agendamento}
+                WHERE rd.id_usuario = ${registroDoacao.id_usuario}
                 ORDER BY rd.id DESC LIMIT 1;
             `
             let criado = await prisma.$queryRawUnsafe(sqlSelect)
@@ -52,7 +60,8 @@ const insertRegistroDoacao = async function (registroDoacao) {
             return false
         }
     } catch (error) {
-        console.error("Erro insertRegistroDoacao:", error)
+        console.error("❌ Erro insertRegistroDoacao:", error)
+        console.error("Dados recebidos:", registroDoacao)
         return false
     }
 }
@@ -102,7 +111,7 @@ const selectAllRegistroDoacao = async function () {
             FROM tbl_registro_doacao rd
             INNER JOIN tbl_usuario u ON rd.id_usuario = u.id
             INNER JOIN tbl_hospital h ON rd.id_hospital = h.id
-            INNER JOIN tbl_agendamento a ON rd.id_agendamento = a.id
+            LEFT JOIN tbl_agendamento a ON rd.id_agendamento = a.id
             ORDER BY rd.data_registro DESC;
         `
         let result = await prisma.$queryRawUnsafe(sql)
@@ -128,7 +137,7 @@ const selectByIdRegistroDoacao = async function (id) {
             FROM tbl_registro_doacao rd
             INNER JOIN tbl_usuario u ON rd.id_usuario = u.id
             INNER JOIN tbl_hospital h ON rd.id_hospital = h.id
-            INNER JOIN tbl_agendamento a ON rd.id_agendamento = a.id
+            LEFT JOIN tbl_agendamento a ON rd.id_agendamento = a.id
             WHERE rd.id = ${id};
         `
         let result = await prisma.$queryRawUnsafe(sql)
@@ -171,7 +180,7 @@ const historicoRegistroDoacao = async function (id_usuario) {
                 a.status AS status_agendamento
             FROM tbl_registro_doacao rd
             INNER JOIN tbl_hospital h ON rd.id_hospital = h.id
-            INNER JOIN tbl_agendamento a ON rd.id_agendamento = a.id
+            LEFT JOIN tbl_agendamento a ON rd.id_agendamento = a.id
             WHERE rd.id_usuario = ${id_usuario}
             ORDER BY rd.data_doacao DESC;
         `

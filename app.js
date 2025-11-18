@@ -2,10 +2,9 @@
  * OBJETIVO: API referente ao projeto DOE VIDA
  * DATA: 23/09/2025
  * AUTOR: DANIEL TORRES
- * VERSÃO: 2.0 (Otimizado para produção)
+ * VERSÃO: 2.1 (Com correção de inicialização para Azure)
  *================================================================================================ 
- * 
- * MELHORIAS IMPLEMENTADAS:
+ * * MELHORIAS IMPLEMENTADAS:
  * - Rate limiting para prevenir abuso
  * - Helmet para headers de segurança
  * - Compressão gzip para melhor performance
@@ -14,12 +13,13 @@
  * - Logging estruturado
  * - CORS configurado adequadamente
  * - Health check endpoint
- * 
- *************************************************************************************************/
+ * - **CORRIGIDO: Inicialização do Servidor (app.listen) usando process.env.PORT**
+ * *************************************************************************************************/
 
 // Carregar variáveis de ambiente primeiro
 require('dotenv').config()
 
+//comentario de teste
 //Import das bibliotecas para criar a API
 const express    = require('express')
 const cors       = require('cors')
@@ -58,7 +58,7 @@ const app = express()
 app.set('trust proxy', 1)
 
 /*************************************************************************************************
- *                                CONFIGURAÇÃO DE MIDDLEWARES GLOBAIS
+ * CONFIGURAÇÃO DE MIDDLEWARES GLOBAIS
  *************************************************************************************************/
 
 // Helmet - Headers de segurança
@@ -106,7 +106,7 @@ app.use(sanitizeInput)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 /*************************************************************************************************
- *                                   HEALTH CHECK ENDPOINT
+ * HEALTH CHECK ENDPOINT
  *************************************************************************************************/
 app.get('/health', (req, res) => {
     res.status(200).json({
@@ -126,7 +126,7 @@ app.get('/v1/doevida/health', (req, res) => {
 })
 
 /*************************************************************************************************
- *                                      ENDPOINTS AGENDAMENTO
+ * ENDPOINTS AGENDAMENTO
  *************************************************************************************************/
 // Listar todos os agendamentos
 app.get('/v1/doevida/agendamento', async function(request, response){
@@ -210,7 +210,7 @@ app.get('/v1/agendamento/disponibilidade', async function(request, response) {
 })
 
 /*************************************************************************************************
- *                              NOVAS ROTAS PARA TELA DE AGENDAMENTO
+ * NOVAS ROTAS PARA TELA DE AGENDAMENTO
  *************************************************************************************************/
 // Listar dias disponíveis de um hospital
 app.get('/v1/doevida/hospital/:id/dias-disponiveis', async function(request, response){
@@ -234,7 +234,7 @@ app.get('/v1/doevida/hospital/:id/horarios', async function(request, response){
 })
 
 /*************************************************************************************************
- *                                  ENDPOINTS BANCO DE SANGUE
+ * ENDPOINTS BANCO DE SANGUE
  *************************************************************************************************/
 // Inserir novo banco de sangue
 app.post('/v1/doevida/banco-sangue', async function(request, response){
@@ -279,7 +279,7 @@ app.put('/v1/doevida/banco-sangue/:id', async function(request, response){
 })
 
 /*************************************************************************************************
- *                                      ENDPOINTS CERTIFICADO
+ * ENDPOINTS CERTIFICADO
  *************************************************************************************************/
 // Inserir novo certificado
 app.post('/v1/doevida/certificado', async function(request, response){
@@ -324,7 +324,7 @@ app.put('/v1/doevida/certificado/:id', async function(request, response){
 })
 
 /*************************************************************************************************
- *                                      ENDPOINTS DOAÇÃO
+ * ENDPOINTS DOAÇÃO
  *************************************************************************************************/
 // Inserir nova doação
 app.post('/v1/doevida/doacao', async function(request, response){
@@ -387,7 +387,7 @@ app.get('/v1/doacao/compatibilidade', async function(request, response) {
 })
 
 /*************************************************************************************************
- *                                      ENDPOINTS HOSPITAL
+ * ENDPOINTS HOSPITAL
  *************************************************************************************************/
 // Upload de imagem para hospital
 app.post('/v1/doevida/hospital/upload-image', upload.single('foto'), processImage, cleanupOnError, async function(request, response){
@@ -446,7 +446,7 @@ app.put('/v1/doevida/hospital/:id', async function(request, response){
 })
 
 /*************************************************************************************************
- *                                  ENDPOINTS REGISTRO DE DOAÇÃO
+ * ENDPOINTS REGISTRO DE DOAÇÃO
  *************************************************************************************************/
 // Upload de comprovante de doação (protegido por autenticação)
 app.post('/v1/doevida/registro-doacao/upload-comprovante', verificarToken, upload.single('foto_comprovante'), processImage, cleanupOnError, async function(request, response){
@@ -518,7 +518,7 @@ app.delete('/v1/doevida/registro-doacao/:id', verificarToken, async function(req
 })
 
 /*************************************************************************************************
- *                                      ENDPOINTS SEXO USUÁRIO
+ * ENDPOINTS SEXO USUÁRIO
  *************************************************************************************************/
 // Inserir novo sexo de usuário
 app.post('/v1/doevida/sexo-usuario', async function(request, response){
@@ -546,7 +546,7 @@ app.delete('/v1/doevida/sexo-usuario/:id', async function(request, response){
 
 
 /*************************************************************************************************
- *                                      ENDPOINTS TELEFONE
+ * ENDPOINTS TELEFONE
  *************************************************************************************************/
 // Inserir novo telefone
 app.post('/v1/doevida/telefone', async function(request, response){
@@ -581,7 +581,7 @@ app.delete('/v1/doevida/telefone/:id', async function(request, response){
 })
 
 /*************************************************************************************************
- *                                      ENDPOINTS USUÁRIO
+ * ENDPOINTS USUÁRIO
  *************************************************************************************************/
 // Inserir novo usuário / Cadastrar usuário
 app.post('/v1/doevida/usuario', registerLimiter, validateUsuario, async function(request, response){
@@ -700,7 +700,7 @@ app.post('/v1/doevida/agendamentos', bookingLimiter, verificarToken, validateAge
 })
 
 /*************************************************************************************************
- *                           ENDPOINTS RECUPERAÇÃO DE SENHA
+ * ENDPOINTS RECUPERAÇÃO DE SENHA
  *************************************************************************************************/
 // Solicitar recuperação de senha (gera e envia código)
 app.post('/v1/doevida/recuperar-senha', recoveryLimiter, validateRecuperacaoEmail, async function(request, response){
@@ -740,7 +740,7 @@ app.post('/v1/doevida/usuarios/redefinir-senha', validateRedefinirSenha, async f
 
 
 /*************************************************************************************************
- *                              ENDPOINTS TIPO SANGUÍNEO
+ * ENDPOINTS TIPO SANGUÍNEO
  *************************************************************************************************/
 // Inserir novo tipo sanguíneo
 app.post('/v1/doevida/tipo-sanguineo', async function(request, response){
@@ -766,98 +766,35 @@ app.get('/v1/doevida/tipo-sanguineo/:id', async function(request, response){
     response.json(result)
 })
 
-// Atualizar um tipo sanguíneo por ID
-app.put('/v1/doevida/tipo-sanguineo/:id', async function(request, response){
-    let contentType = request.headers['content-type']
-    let id          = request.params.id
-    let dadosBody   = request.body
-    let result      = await controllerTipoSanguineo.atualizarTipoSanguineo(id, dadosBody, contentType)
-    response.status(result.status_code)
-    response.json(result)
-})
-
-// Excluir um tipo sanguíneo por ID
-app.delete('/v1/doevida/tipo-sanguineo/:id', async function(request, response){
-    let id     = request.params.id
-    let result = await controllerTipoSanguineo.excluirTipoSanguineo(id)
-    response.status(result.status_code)
-    response.json(result)
-})
-
-
-
 
 /*************************************************************************************************
- *                                   MIDDLEWARE DE ERRO GLOBAL
+ * TRATAMENTO DE ERROS GERAL (ÚLTIMO MIDDLEWARE)
  *************************************************************************************************/
-// Handler para rotas não encontradas
-app.use((req, res) => {
-    res.status(404).json({
-        status: false,
-        status_code: 404,
-        message: 'Endpoint não encontrado',
-        path: req.originalUrl
-    })
-})
-
-// Handler global de erros
 app.use((err, req, res, next) => {
-    logger.error('Erro não tratado', {
-        error: err.message,
+    logger.error('Erro interno não tratado:', { 
+        message: err.message, 
         stack: err.stack,
-        path: req.originalUrl,
+        url: req.originalUrl,
         method: req.method
-    })
-    
-    res.status(err.status || 500).json({
+    });
+    // Se o erro tiver um status, use-o; caso contrário, 500
+    const status = err.status || 500; 
+    res.status(status).json({
         status: false,
-        status_code: err.status || 500,
-        message: process.env.NODE_ENV === 'production' 
-            ? 'Erro interno do servidor' 
-            : err.message
-    })
-})
+        status_code: status,
+        message: 'Ocorreu um erro interno não tratado na API.',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined // Não expor detalhes de erro em produção
+    });
+});
 
+//comentario para teste
 /*************************************************************************************************
- *                                      INICIANDO SERVIDOR
+ * INICIALIZAÇÃO DO SERVIDOR (CORREÇÃO)
  *************************************************************************************************/
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 8080; 
 
-const server = app.listen(PORT, function(){
-    logger.info(`🩸 API DOE VIDA iniciada com sucesso!`, {
-        port: PORT,
-        environment: process.env.NODE_ENV || 'development',
-        node_version: process.version
-    })
-    
-    console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║   🩸  API DOE VIDA - Sistema de Doação de Sangue  🩸     ║
-║                                                           ║
-║   Servidor: http://localhost:${PORT}                      ║
-║   Ambiente: ${(process.env.NODE_ENV || 'development').padEnd(45)}║
-║   Health Check: http://localhost:${PORT}/health           ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝
-    `)
-})
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    logger.info('SIGTERM recebido. Encerrando servidor gracefully...')
-    server.close(() => {
-        logger.info('Servidor encerrado')
-        process.exit(0)
-    })
-})
-
-process.on('SIGINT', () => {
-    logger.info('SIGINT recebido. Encerrando servidor gracefully...')
-    server.close(() => {
-        logger.info('Servidor encerrado')
-        process.exit(0)
-    })
-})
-
-module.exports = app
+app.listen(PORT, () => {
+    // Esta mensagem aparecerá no Log Stream se o servidor iniciar com sucesso no Azure
+    console.log(`[SERVER] API DOE VIDA iniciada e escutando na porta ${PORT}`); 
+    logger.info(`Servidor iniciado com sucesso na porta ${PORT}`);
+});

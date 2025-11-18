@@ -135,6 +135,9 @@ const atualizarUsuario = async function(dadosUsuario, idUsuario, contentType){
             dadosUsuario.uf = dadosEndereco.uf
         }
 
+        // SEMPRE preservar senha_hash existente (não permitir atualização de senha por este endpoint)
+        dadosUsuario.senha_hash = usuarioExistente.senha_hash
+
         dadosUsuario.id = parseInt(idUsuario)
         const usuarioAtualizado = await usuarioDAO.updateUsuario(dadosUsuario)
 

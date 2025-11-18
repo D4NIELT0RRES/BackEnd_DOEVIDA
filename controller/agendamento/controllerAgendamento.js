@@ -73,6 +73,10 @@ const inserirAgendamento = async function(agendamento, contentType){
 //Atualizar um agendamento existente pelo ID
 const atualizarAgendamento = async function(agendamento, id, contentType){
     try{
+        console.log('🔍 [BACKEND] Dados recebidos:', JSON.stringify(agendamento, null, 2));
+        console.log('🔍 [BACKEND] ID:', id);
+        console.log('🔍 [BACKEND] Content-Type:', contentType);
+        
         if(contentType !== 'application/json'){
             return MESSAGE.ERROR_CONTENT_TYPE
         }
@@ -81,12 +85,29 @@ const atualizarAgendamento = async function(agendamento, id, contentType){
            !agendamento.data        ||
            !agendamento.hora        ||
            !agendamento.id_usuario  || isNaN(agendamento.id_usuario)  || agendamento.id_usuario  <= 0 ||
-           !agendamento.id_doacao   || isNaN(agendamento.id_doacao)   || agendamento.id_doacao   <= 0 ||
            !agendamento.id_hospital || isNaN(agendamento.id_hospital) || agendamento.id_hospital <= 0 ||
            !id                      || isNaN(id)                      || id <= 0
         ){
+            console.error('❌ [BACKEND] Validação falhou:', {
+                status: agendamento.status,
+                data: agendamento.data,
+                hora: agendamento.hora,
+                id_usuario: agendamento.id_usuario,
+                id_hospital: agendamento.id_hospital,
+                id: id
+            });
             return MESSAGE.ERROR_REQUIRED_FIELDS
         }
+        
+        // id_doacao é opcional - se fornecido, validar
+        if(agendamento.id_doacao !== undefined && agendamento.id_doacao !== null){
+            if(isNaN(agendamento.id_doacao) || agendamento.id_doacao <= 0){
+                console.error('❌ [BACKEND] id_doacao inválido:', agendamento.id_doacao);
+                return MESSAGE.ERROR_REQUIRED_FIELDS
+            }
+        }
+        
+        console.log('✅ [BACKEND] Validação passou!');
 
         const agendamentoExistente = await agendamentoDAO.selectByIdAgendamento(parseInt(id))
         if(!agendamentoExistente){
