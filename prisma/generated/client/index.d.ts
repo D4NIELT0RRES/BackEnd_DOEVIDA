@@ -76,7 +76,8 @@ export namespace $Enums {
   export const tbl_agendamento_status: {
   Agendado: 'Agendado',
   Em_espera: 'Em_espera',
-  Conclu_do: 'Conclu_do'
+  Conclu_do: 'Conclu_do',
+  Cancelado: 'Cancelado'
 };
 
 export type tbl_agendamento_status = (typeof tbl_agendamento_status)[keyof typeof tbl_agendamento_status]

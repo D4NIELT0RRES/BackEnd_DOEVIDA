@@ -5,7 +5,7 @@
  * Versão: 2.0 (Integrado com envio de email)
  ***************************************************************************************/
 
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('../../prisma/generated/client')
 const prisma = new PrismaClient()
 const MESSAGE = require('../../modulo/config.js')
 const bcrypt = require('bcrypt')
