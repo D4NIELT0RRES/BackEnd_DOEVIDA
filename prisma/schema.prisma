@@ -11,8 +11,6 @@ datasource db {
   url      = "mysql://admdoevida:Password123!@doevida.mysql.database.azure.com:3306/db_doevida_tcc?sslmode=REQUIRED&sslcert=/home/site/wwwroot/DigiCertGlobalRootG2.crt.pem" 
 }
 
-
-
 model tbl_agendamento {
   id                  Int                    @id @default(autoincrement())
   status              tbl_agendamento_status @default(Em_espera)
