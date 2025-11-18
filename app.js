@@ -82,7 +82,14 @@ const corsOptions = {
         ? process.env.CORS_ORIGIN.split(',') 
         : ['http://localhost:3000', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization',
+        'X-Development-Mode',
+        'X-Bypass-Rate-Limit',
+        'X-Test-Mode',
+        'X-Skip-Rate-Limit'
+    ],
     credentials: true,
     maxAge: 86400 // 24 horas de cache do preflight
 }

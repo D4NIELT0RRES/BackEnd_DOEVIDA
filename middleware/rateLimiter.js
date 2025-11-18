@@ -18,8 +18,14 @@ const generalLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Pula rate limiting para health checks
-    skip: (req) => req.path === '/health' || req.path === '/v1/doevida/health'
+    // Pula rate limiting para health checks e desenvolvimento
+    skip: (req) => {
+        return req.path === '/health' || 
+               req.path === '/v1/doevida/health' ||
+               req.headers['x-development-mode'] === 'true' ||
+               req.headers['x-bypass-rate-limit'] === 'true' ||
+               process.env.NODE_ENV === 'development'
+    }
 })
 
 // Rate limiter para autenticação - 5 tentativas por 15 minutos
@@ -59,7 +65,14 @@ const registerLimiter = rateLimit({
         message: 'Limite de cadastros atingido. Tente novamente em 1 hora.'
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    // Bypass para desenvolvimento
+    skip: (req) => {
+        return req.headers['x-development-mode'] === 'true' ||
+               req.headers['x-bypass-rate-limit'] === 'true' ||
+               req.headers['x-test-mode'] === 'unlimited-requests' ||
+               process.env.NODE_ENV === 'development'
+    }
 })
 
 // Rate limiter para agendamentos - 10 agendamentos por hora
