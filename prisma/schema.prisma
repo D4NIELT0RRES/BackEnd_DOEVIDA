@@ -70,7 +70,7 @@ model tbl_hospital {
   convenios            String                 @db.VarChar(255)
   horario_abertura     DateTime               @default(dbgenerated("'08:00:00'")) @db.Time(0)
   horario_fechamento   DateTime               @default(dbgenerated("'18:00:00'")) @db.Time(0)
-  foto                 String                 @db.VarChar(255)
+  foto                 String                 @db.MediumText
   complemento          String?                @db.VarChar(255)
   agendamentos         tbl_agendamento[]
   tbl_banco_sangue     tbl_banco_sangue[]
